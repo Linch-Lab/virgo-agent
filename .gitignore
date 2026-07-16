@@ -1,0 +1,33 @@
+# Virgo Agent .gitignore
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Uploads
+uploads/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
