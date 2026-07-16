@@ -4,6 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
 <title>Virgo Agent — AI Research Notebook</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{--bg:#fafaf8;--card:#fff;--bdr:#d8d8d2;--txt:#1a1a1a;--muted:#666;--acc:#2c5f8a;--grn:#2a7d4f;--red:#b33;--warn:#b8860b}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -170,6 +171,27 @@ body.presenting .comic-grid{min-height:calc(100vh*9/16 - 120px);aspect-ratio:aut
 .format-bar button:hover{background:#edece7}
 .format-bar button.active{background:var(--acc);color:#fff}
 .format-bar .fb-divider{width:1px;height:16px;background:var(--bdr);margin:0 3px}
+/* Auth modal */
+.auth-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:2000;display:none;align-items:center;justify-content:center}
+.auth-overlay.show{display:flex}
+.auth-box{background:var(--card);border-radius:8px;padding:32px;width:380px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.auth-box h3{font-size:16px;font-weight:600;margin-bottom:4px;color:var(--acc)}
+.auth-box .auth-sub{font-size:10px;color:var(--muted);margin-bottom:18px}
+.auth-box label{font-size:10px;color:var(--muted);margin-bottom:3px;display:block}
+.auth-box input[type=email],.auth-box input[type=password]{width:100%;padding:8px 10px;border:1px solid var(--bdr);font-size:12px;background:var(--card);color:var(--txt);border-radius:4px;margin-bottom:10px;font-family:inherit}
+.auth-box .auth-err{font-size:9px;color:var(--red);margin-bottom:8px;min-height:14px}
+.auth-box .auth-actions{display:flex;gap:8px;align-items:center}
+.auth-box .auth-actions button{flex:1;padding:8px;border-radius:4px;font-size:11px;cursor:pointer;border:none;font-family:inherit}
+.auth-box .auth-actions button.prim{background:var(--acc);color:#fff}
+.auth-box .auth-actions button.sec{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.auth-box .auth-toggle{font-size:10px;color:var(--muted);margin-top:12px;text-align:center;cursor:pointer}
+.auth-box .auth-toggle span{color:var(--acc);text-decoration:underline}
+/* Auth button in sidebar */
+.sidebar-auth{padding:8px 16px;border-top:1px solid var(--bdr);margin-top:auto;display:flex;align-items:center;gap:8px;font-size:10px}
+.sidebar-auth .auth-user{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.sidebar-auth .auth-btn{padding:3px 8px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);border-radius:3px;cursor:pointer;font-size:9px;font-family:inherit}
+.sidebar-auth .auth-btn:hover{border-color:var(--acc);color:var(--acc)}
+.sidebar-auth .auth-btn.login-btn{background:var(--acc);color:#fff;border:none}
 </style>
 </head>
 <body>
@@ -180,6 +202,10 @@ body.presenting .comic-grid{min-height:calc(100vh*9/16 - 120px);aspect-ratio:aut
     <button class="present-btn" onclick="togglePresent()">▶ Present</button>
   </div>
   <div id="sidebarNav"></div>
+  <div class="sidebar-auth" id="sidebarAuth">
+    <span class="auth-user" id="sidebarAuthUser">Not logged in</span>
+    <button class="auth-btn login-btn" onclick="showAuthModal()" id="sidebarAuthBtn">Login</button>
+  </div>
 </div>
 
 <div class="main">
@@ -297,6 +323,26 @@ body.presenting .comic-grid{min-height:calc(100vh*9/16 - 120px);aspect-ratio:aut
   <button onclick="formatLink()" title="Link">🔗</button>
 </div>
 
+<!-- Auth Modal -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-box">
+    <h3 id="authTitle">Sign in to Virgo Agent</h3>
+    <div class="auth-sub" id="authSub">Sync your research data securely to the cloud</div>
+    <label>Email</label>
+    <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+    <label>Password</label>
+    <input type="password" id="authPassword" placeholder="********" autocomplete="current-password">
+    <div class="auth-err" id="authErr"></div>
+    <div class="auth-actions">
+      <button class="sec" id="authCancelBtn" onclick="closeAuthModal()">Offline Mode</button>
+      <button class="prim" id="authSubmitBtn" onclick="handleAuthSubmit()">Sign In</button>
+    </div>
+    <div class="auth-toggle" onclick="toggleAuthMode()">
+      <span id="authToggleText">Don't have an account? <span>Sign up</span></span>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════
 // Virgo Agent — AI Research Notebook
@@ -304,12 +350,236 @@ body.presenting .comic-grid{min-height:calc(100vh*9/16 - 120px);aspect-ratio:aut
 const DB_NAME='virgo_agent',DB_VER=5;
 var db=null;
 
+// ═══════════════════════════════════════════
+// Supabase Client
+// ═══════════════════════════════════════════
+const SUPABASE_URL='https://mtshudmynuedafqixbvj.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_97FLsYeAC_P5WWWeSkfvgQ_H99sN3VU';
+const API_BASE='https://virgo-agent-api.onrender.com';
+var supabase=null;
+var supabaseReady=false;
+var authMode='signin'; // 'signin' or 'signup'
+
+// Init Supabase client if the CDN loaded
+if(typeof supabase !== 'undefined' || typeof window.supabase !== 'undefined'){
+  try{
+    var sbCtor=typeof supabase !== 'undefined' ? supabase.createClient : window.supabase.createClient;
+    supabase=sbCtor(SUPABASE_URL,SUPABASE_ANON_KEY);
+    supabaseReady=true;
+  }catch(e){console.warn('Supabase init failed, offline mode',e);supabaseReady=false;}
+}
+
+// ═══════════════════════════════════════════
+// Auth state
+// ═══════════════════════════════════════════
+var authUser=null;
+async function tryRestoreSession(){
+  if(!supabase)return;
+  try{
+    var session=await supabase.auth.getSession();
+    if(session&&session.data&&session.data.session){
+      authUser=session.data.session.user;
+      updateAuthUI();
+      return true;
+    }
+  }catch(e){console.warn('Session restore failed',e);}
+  return false;
+}
+
+function updateAuthUI(){
+  var userEl=document.getElementById('sidebarAuthUser');
+  var btnEl=document.getElementById('sidebarAuthBtn');
+  if(authUser){
+    if(userEl)userEl.textContent=authUser.email||'Logged in';
+    if(btnEl){btnEl.textContent='Sign Out';btnEl.className='auth-btn';btnEl.onclick=handleSignOut;}
+  }else{
+    if(userEl)userEl.textContent='Not logged in';
+    if(btnEl){btnEl.textContent='Login';btnEl.className='auth-btn login-btn';btnEl.onclick=showAuthModal;}
+  }
+}
+
+function showAuthModal(){
+  document.getElementById('authEmail').value='';
+  document.getElementById('authPassword').value='';
+  document.getElementById('authErr').textContent='';
+  authMode='signin';
+  document.getElementById('authTitle').textContent='Sign in to Virgo Agent';
+  document.getElementById('authSub').textContent='Sync your research data securely to the cloud';
+  document.getElementById('authSubmitBtn').textContent='Sign In';
+  document.getElementById('authToggleText').innerHTML='Don\'t have an account? <span>Sign up</span>';
+  document.getElementById('authOverlay').classList.add('show');
+  document.getElementById('authEmail').focus();
+}
+
+function closeAuthModal(){
+  document.getElementById('authOverlay').classList.remove('show');
+}
+
+function toggleAuthMode(){
+  authMode=authMode==='signin'?'signup':'signin';
+  if(authMode==='signup'){
+    document.getElementById('authTitle').textContent='Create Account';
+    document.getElementById('authSub').textContent='Sign up to sync your data across devices';
+    document.getElementById('authSubmitBtn').textContent='Sign Up';
+    document.getElementById('authToggleText').innerHTML='Already have an account? <span>Sign in</span>';
+  }else{
+    document.getElementById('authTitle').textContent='Sign in to Virgo Agent';
+    document.getElementById('authSub').textContent='Sync your research data securely to the cloud';
+    document.getElementById('authSubmitBtn').textContent='Sign In';
+    document.getElementById('authToggleText').innerHTML='Don\'t have an account? <span>Sign up</span>';
+  }
+  document.getElementById('authErr').textContent='';
+}
+
+async function handleAuthSubmit(){
+  var email=document.getElementById('authEmail').value.trim();
+  var password=document.getElementById('authPassword').value;
+  var errEl=document.getElementById('authErr');
+  if(!email||!password){errEl.textContent='Please fill in both fields.';return;}
+  if(!supabase){errEl.textContent='Supabase not available. Use offline mode.';return;}
+  errEl.textContent='';
+
+  try{
+    var result;
+    if(authMode==='signup'){
+      result=await supabase.auth.signUp({email:email,password:password});
+      if(result.error)throw result.error;
+      if(result.data.user&&result.data.session){
+        authUser=result.data.user;
+        updateAuthUI();
+        closeAuthModal();
+        toast('Account created! Check email to confirm.','var(--grn)');
+      }else{
+        errEl.textContent='Check your email for a confirmation link.';
+      }
+    }else{
+      result=await supabase.auth.signInWithPassword({email:email,password:password});
+      if(result.error)throw result.error;
+      authUser=result.data.user;
+      updateAuthUI();
+      closeAuthModal();
+      toast('Signed in ✓','var(--grn)');
+    }
+  }catch(e){errEl.textContent=e.message||'Authentication failed';}
+}
+
+async function handleSignOut(){
+  if(authUser&&supabase){
+    try{await supabase.auth.signOut();}catch(e){console.warn('Sign out error',e);}
+  }
+  authUser=null;
+  updateAuthUI();
+  toast('Signed out — switched to offline mode');
+}
+
+// Close auth modal on overlay click
+document.addEventListener('click',function(e){
+  if(e.target===document.getElementById('authOverlay'))closeAuthModal();
+});
+// Allow Enter key in auth form
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&document.getElementById('authOverlay').classList.contains('show')){
+    handleAuthSubmit();
+  }
+});
+
+// ═══════════════════════════════════════════
+// Database layer — Supabase-first with IndexedDB fallback
+// ═══════════════════════════════════════════
+
 function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VER);req.onupgradeneeded=(e)=>{const d=e.target.result;if(!d.objectStoreNames.contains('experiments'))d.createObjectStore('experiments',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'});if(!d.objectStoreNames.contains('chat_history'))d.createObjectStore('chat_history',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('pages'))d.createObjectStore('pages',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('skills'))d.createObjectStore('skills',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('analyses'))d.createObjectStore('analyses',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('literature'))d.createObjectStore('literature',{keyPath:'id',autoIncrement:true});};req.onsuccess=(e)=>{db=e.target.result;resolve(db)};req.onerror=(e)=>reject(e.target.error)})}
-function dbPut(s,d){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).put(d);t.oncomplete=()=>{r(q.result);scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
-function dbGetAll(s){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).getAll();t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
-function dbGet(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).get(k);t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
-function dbDelete(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).delete(k);t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
-function dbClear(s){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).clear();t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+
+// Internal IndexedDB-only operations (kept for fallback)
+function _dbPut(s,d){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).put(d);t.oncomplete=()=>{r(q.result);scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+function _dbGetAll(s){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).getAll();t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
+function _dbGet(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).get(k);t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
+function _dbDelete(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).delete(k);t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+function _dbClear(s){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).clear();t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+
+// Check if we should use Supabase for this operation
+function _useSupabase(){return supabaseReady&&supabase&&authUser;}
+
+// Wrapped data operations: try Supabase first, fall back to IndexedDB
+async function dbPut(s,d){
+  if(_useSupabase()){
+    try{
+      // Remove undefined values for Supabase compatibility
+      var clean={};for(var k in d){if(d[k]!==undefined)clean[k]=d[k];}
+      var result=await supabase.from(s).upsert(clean).select();
+      if(result.error)throw result.error;
+      // Also mirror to IndexedDB for offline access
+      if(result.data&&result.data.length>0){
+        try{
+          var supData=result.data[0];
+          // Map Supabase id back to IndexedDB key if auto-increment
+          if(s!=='settings'){clean.id=supData.id;}
+          await _dbPut(s,clean);
+        }catch(e){console.warn('IDB mirror failed',e);}
+      }
+      scheduleMirror();
+      return result.data[0]?result.data[0].id:(d.id||undefined);
+    }catch(e){
+      console.warn('Supabase put failed, falling back to IndexedDB:',s,e.message);
+      return _dbPut(s,d);
+    }
+  }
+  return _dbPut(s,d);
+}
+
+async function dbGetAll(s){
+  if(_useSupabase()){
+    try{
+      var result=await supabase.from(s).select('*').order('id',{ascending:false});
+      if(result.error)throw result.error;
+      return result.data||[];
+    }catch(e){
+      console.warn('Supabase getAll failed, falling back to IndexedDB:',s,e.message);
+      return _dbGetAll(s);
+    }
+  }
+  return _dbGetAll(s);
+}
+
+async function dbGet(s,k){
+  if(_useSupabase()){
+    try{
+      var result=await supabase.from(s).select('*').eq('id',k).single();
+      if(result.error){
+        // If not found, it's ok — return null
+        if(result.error.code==='PGRST116')return null;
+        throw result.error;
+      }
+      return result.data||null;
+    }catch(e){
+      if(e.code==='PGRST116')return null;
+      console.warn('Supabase get failed, falling back to IndexedDB:',s,k,e.message);
+      return _dbGet(s,k);
+    }
+  }
+  return _dbGet(s,k);
+}
+
+async function dbDelete(s,k){
+  if(_useSupabase()){
+    try{
+      var result=await supabase.from(s).delete().eq('id',k);
+      if(result.error)throw result.error;
+      // Also delete from IndexedDB mirror
+      try{await _dbDelete(s,k);}catch(e){}
+      scheduleMirror();
+      return;
+    }catch(e){
+      console.warn('Supabase delete failed, falling back to IndexedDB:',s,k,e.message);
+      return _dbDelete(s,k);
+    }
+  }
+  return _dbDelete(s,k);
+}
+
+function dbClear(s){
+  // dbClear is destructive — only use IndexedDB, never Supabase
+  return _dbClear(s);
+}
 
 // ══════════ P0: localStorage crash mirror ══════════
 var _mirrorTimer=null;
@@ -2617,6 +2887,8 @@ function toast(msg,color){const t=document.createElement('div');t.className='toa
 (async function(){
   try{
   await openDB();
+  // P0: restore Supabase session if available
+  var loggedIn=await tryRestoreSession();
   // P0: check if recovery needed
   var pages=await dbGetAll('pages');
   if(pages.length===0){
@@ -2625,6 +2897,8 @@ function toast(msg,color){const t=document.createElement('div');t.className='toa
   }
   await seedAll();await loadActiveProject();await buildSidebar();await goPage('dashboard');
   document.getElementById('dbStatus').textContent='Ready';
+  // Show auth modal if not logged in and Supabase is ready
+  if(!loggedIn&&supabaseReady){setTimeout(function(){showAuthModal();},800);}
   }catch(e){document.getElementById('sidebarNav').innerHTML='<div style="padding:16px;color:var(--red);font-size:10px">Error: '+String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>';console.error(e)}
   document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',function(e){if(e.target===this){this.classList.remove('show')}})});
 })();
