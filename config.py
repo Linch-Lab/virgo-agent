@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     app_name: str = "Virgo Agent"
     app_version: str = "0.1.0"
     debug: bool = False
-    secret_key: str = "change-me-in-production-use-a-real-secret"
+    secret_key: str = Field(..., description="JWT signing secret — set via VIRGO_SECRET_KEY environment variable")
     api_key_prefix: str = "vg-"
 
     # ── 資料庫 ──
