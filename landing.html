@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virgo Agent — The AI Research Workspace for Materials Science</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0b;--bg2:#111114;--bg3:#1a1a1f;--bdr:#2a2a30;
+    --txt:#e8e8ec;--txt2:#9898a4;--acc:#6c5ce7;--acc2:#a78bfa;
+    --grn:#00c896;--warn:#f59e0b;--red:#ef4444;
+    --radius:8px;--maxw:1200px;
+  }
+  html{scroll-behavior:smooth}
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);line-height:1.6;-webkit-font-smoothing:antialiased}
+  a{color:var(--acc2);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Nav */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,10,11,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--bdr)}
+  .nav-inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+  .nav-logo{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px}
+  .nav-logo .icon{width:28px;height:28px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+  .nav-links{display:flex;gap:24px;align-items:center}
+  .nav-links a{font-size:13px;color:var(--txt2);transition:color .15s}
+  .nav-links a:hover{color:#fff;text-decoration:none}
+  .nav-cta{background:var(--acc);color:#fff!important;padding:7px 16px;border-radius:6px;font-weight:600;font-size:13px;transition:all .2s}
+  .nav-cta:hover{background:var(--acc2);text-decoration:none!important}
+
+  /* Sections */
+  section{padding:80px 24px}
+  .section-inner{max-width:var(--maxw);margin:0 auto}
+  .section-label{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--acc2);margin-bottom:12px;font-weight:600}
+
+  /* Hero */
+  .hero{padding:140px 24px 80px;text-align:center}
+  .hero h1{font-size:clamp(36px,5vw,60px);font-weight:800;line-height:1.15;letter-spacing:-1px;max-width:800px;margin:0 auto 20px}
+  .hero h1 span{background:linear-gradient(135deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{font-size:18px;color:var(--txt2);max-width:600px;margin:0 auto 36px;line-height:1.7}
+  .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{display:inline-block;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;text-decoration:none}
+  .btn-primary{background:var(--acc);color:#fff}
+  .btn-primary:hover{background:var(--acc2);text-decoration:none}
+  .btn-outline{border:1px solid var(--bdr);color:var(--txt);background:transparent}
+  .btn-outline:hover{border-color:var(--txt2);text-decoration:none}
+
+  /* Problem / Solution */
+  .problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+  .problem-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:28px}
+  .problem-card h3{font-size:18px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .problem-card ul{list-style:none}
+  .problem-card li{padding:8px 0;font-size:14px;color:var(--txt2);border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;gap:8px}
+  .problem-card li:last-child{border:none}
+  .problem-card li .dot{width:6px;height:6px;border-radius:50%;margin-top:7px;flex-shrink:0}
+  .dot-red{background:var(--red)}
+  .dot-grn{background:var(--grn)}
+
+  /* Features */
+  .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .feature-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:28px;transition:border-color .2s}
+  .feature-card:hover{border-color:var(--acc)}
+  .feature-icon{font-size:28px;margin-bottom:14px}
+  .feature-card h3{font-size:16px;margin-bottom:8px}
+  .feature-card p{font-size:13px;color:var(--txt2);line-height:1.7}
+
+  /* How it Works */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;position:relative}
+  .step-card{text-align:center;padding:24px 16px}
+  .step-num{width:44px;height:44px;border-radius:50%;background:var(--acc);color:#fff;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+  .step-card h3{font-size:15px;margin-bottom:6px}
+  .step-card p{font-size:12px;color:var(--txt2);line-height:1.6}
+
+  /* Pricing */
+  .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .pricing-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;padding:32px;text-align:center;position:relative;transition:all .3s}
+  .pricing-card.featured{border-color:var(--acc);box-shadow:0 0 30px rgba(108,92,231,.15)}
+  .pricing-card.featured::before{content:'Most Popular';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--acc);color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+  .pricing-card h3{font-size:18px;margin-bottom:4px}
+  .pricing-card .price{font-size:40px;font-weight:800;margin:12px 0 4px}
+  .pricing-card .price span{font-size:14px;font-weight:400;color:var(--txt2)}
+  .pricing-card .desc{font-size:13px;color:var(--txt2);margin-bottom:20px}
+  .pricing-card ul{list-style:none;text-align:left;margin-bottom:24px}
+  .pricing-card li{padding:7px 0;font-size:13px;color:var(--txt2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
+  .pricing-card li:last-child{border:none}
+  .pricing-card li .check{color:var(--grn);font-weight:700}
+  .pricing-card .btn{width:100%}
+
+  /* Compare */
+  .compare-table{width:100%;border-collapse:collapse;font-size:13px}
+  .compare-table th,.compare-table td{padding:12px 16px;border-bottom:1px solid var(--bdr);text-align:center}
+  .compare-table th:first-child,.compare-table td:first-child{text-align:left}
+  .compare-table th{color:var(--txt2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  .compare-table td .yes{color:var(--grn)}
+  .compare-table td .no{color:var(--txt2);opacity:.4}
+
+  /* CTA */
+  .cta{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid var(--bdr);border-radius:16px;text-align:center;padding:60px 24px}
+  .cta h2{font-size:32px;margin-bottom:12px}
+  .cta p{font-size:16px;color:var(--txt2);margin-bottom:28px}
+
+  /* Footer */
+  footer{padding:40px 24px;border-top:1px solid var(--bdr);text-align:center;font-size:12px;color:var(--txt2)}
+
+  @media(max-width:768px){
+    .hero h1{font-size:28px}
+    .problem-grid,.features-grid,.pricing-grid{grid-template-columns:1fr}
+    .steps{grid-template-columns:repeat(2,1fr)}
+    .nav-links a:not(.nav-cta){display:none}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo"><div class="icon">♍</div>Virgo Agent</div>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#features">Features</a>
+      <a href="#how">How It Works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/login" class="nav-cta">Launch App →</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>Materials research shouldn't feel like <span>fighting your tools</span></h1>
+  <p>Virgo Agent is the AI-powered workspace that replaces scattered spreadsheets, disjointed notes, and manual plotting — so you can focus on discovery, not data wrangling.</p>
+  <div class="hero-btns">
+    <a href="/login" class="btn btn-primary">Try Free →</a>
+    <a href="#pricing" class="btn btn-outline">See Plans</a>
+  </div>
+</section>
+
+<!-- Problem / Solution -->
+<section id="problem">
+  <div class="section-inner">
+    <div class="section-label">The Problem</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <h3><span style="font-size:20px">🔴</span> Without Virgo Agent</h3>
+        <ul>
+          <li><span class="dot dot-red"></span> CSV data lives in random folders; no connection to experimental context</li>
+          <li><span class="dot dot-red"></span> Plotting requires Python/Origin — slow, error-prone, not reproducible</li>
+          <li><span class="dot dot-red"></span> Notes, literature, and results scattered across Word, Notion, Zotero</li>
+          <li><span class="dot dot-red"></span> Onboarding new lab members takes months of tribal knowledge transfer</li>
+          <li><span class="dot dot-red"></span> No standardized way to compare experiments across projects or time</li>
+        </ul>
+      </div>
+      <div class="problem-card" style="border-color:var(--grn);border-width:2px">
+        <h3><span style="font-size:20px">🟢</span> With Virgo Agent</h3>
+        <ul>
+          <li><span class="dot dot-grn"></span> Upload CSV → AI auto-detects columns, picks the right plot type, and draws publication-quality charts</li>
+          <li><span class="dot dot-grn"></span> Every experiment lives inside a structured project with context: Purpose → Literature → Method → Results → Output</li>
+          <li><span class="dot dot-grn"></span> Built-in block editor with slash commands, side-by-side columns, and flowchart views — like Notion, but for science</li>
+          <li><span class="dot dot-grn"></span> Present mode: one click turns your research notebook into a 16:9 slide deck</li>
+          <li><span class="dot dot-grn"></span> Export PNG, SVG, CSV — ready for papers, reports, and presentations</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features" style="background:var(--bg2)">
+  <div class="section-inner">
+    <div class="section-label">Features</div>
+    <h2 style="font-size:28px;margin-bottom:40px">Everything a materials scientist needs,<br>in one workspace</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>AI-Powered Analysis</h3>
+        <p>Upload any CSV. DeepSeek AI auto-detects columns, units, and chart type. Get publication-ready plots and statistical summaries in seconds — no code required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧪</div>
+        <h3>Structured Experiments</h3>
+        <p>Every experiment follows a four-panel framework: Fixed Parameters, Variable Parameters, Detection Methods, and Benchmarks. Nothing falls through the cracks.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>Smart Notebook</h3>
+        <p>Block-based editor with slash commands, drag-and-drop reordering, side-by-side columns, and flowchart mode. Write like Notion, think like a scientist.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📚</div>
+        <h3>Literature Manager</h3>
+        <p>Import BibTeX or paste URLs. Link papers to specific experimental steps. Keep your reading and your data in the same place.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎤</div>
+        <h3>One-Click Present</h3>
+        <p>Toggle Present mode and your entire project becomes a 16:9 slide deck. Navigate with arrow keys, exit with Esc. No PowerPoint export needed.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📤</div>
+        <h3>Export Ready</h3>
+        <p>Download charts as PNG or vector SVG. Export tables as CSV. Your data is always yours — no vendor lock-in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section id="how">
+  <div class="section-inner">
+    <div class="section-label">How It Works</div>
+    <h2 style="font-size:28px;margin-bottom:40px">From data to insight in four steps</h2>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <h3>Create Project</h3>
+        <p>Name your project. Virgo scaffolds the full structure: Purpose, Literature, Methods, Results, Output.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <h3>Add Experiments</h3>
+        <p>Define your experimental steps with the four-panel framework. Link literature. Set benchmarks.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <h3>Upload & Analyze</h3>
+        <p>Drop your CSV. Pick a skill. AI processes the data and returns publication-quality charts with statistical summaries.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <h3>Present & Export</h3>
+        <p>Present your work as a slide deck. Export charts and tables for your paper, report, or grant proposal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" style="background:var(--bg2)">
+  <div class="section-inner">
+    <div class="section-label">Pricing</div>
+    <h2 style="font-size:28px;margin-bottom:8px">Start free. Scale when you're ready.</h2>
+    <p style="color:var(--txt2);margin-bottom:40px;max-width:500px">No credit card required. Free tier gives you full access to evaluate Virgo Agent with your real data.</p>
+    <div class="pricing-grid">
+      <!-- Free -->
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <div class="price">$0<span>/month</span></div>
+        <p class="desc">For getting started and light use</p>
+        <ul>
+          <li><span class="check">✓</span> 5 AI analyses / month</li>
+          <li><span class="check">✓</span> Basic Chart.js plots</li>
+          <li><span class="check">✓</span> Full notebook & block editor</li>
+          <li><span class="check">✓</span> Literature manager</li>
+          <li><span class="check">✓</span> Present mode</li>
+          <li><span class="check">✓</span> 1 project</li>
+        </ul>
+        <a href="/login" class="btn btn-outline">Get Started</a>
+      </div>
+      <!-- Pro -->
+      <div class="pricing-card featured">
+        <h3>Pro</h3>
+        <div class="price">$19.99<span>/month</span></div>
+        <p class="desc">For active researchers & labs</p>
+        <ul>
+          <li><span class="check">✓</span> Unlimited AI analyses</li>
+          <li><span class="check">✓</span> SVG & PNG export</li>
+          <li><span class="check">✓</span> Publication-quality matplotlib</li>
+          <li><span class="check">✓</span> Unlimited projects</li>
+          <li><span class="check">✓</span> Project management dashboard</li>
+          <li><span class="check">✓</span> Priority AI processing</li>
+          <li><span class="check">✓</span> CSV bulk import</li>
+        </ul>
+        <a href="/login" class="btn btn-primary">Start Pro Trial</a>
+      </div>
+      <!-- Enterprise -->
+      <div class="pricing-card">
+        <h3>Enterprise</h3>
+        <div class="price">$99<span>/month</span></div>
+        <p class="desc">For research groups & institutions</p>
+        <ul>
+          <li><span class="check">✓</span> Everything in Pro</li>
+          <li><span class="check">✓</span> API access</li>
+          <li><span class="check">✓</span> On-premise deployment option</li>
+          <li><span class="check">✓</span> White-label branding</li>
+          <li><span class="check">✓</span> Team collaboration</li>
+          <li><span class="check">✓</span> Dedicated support</li>
+          <li><span class="check">✓</span> Custom skill development</li>
+        </ul>
+        <a href="mailto:hello@virgo.billlinch.com" class="btn btn-outline">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature Comparison -->
+<section>
+  <div class="section-inner">
+    <div class="section-label">Compare Plans</div>
+    <div style="overflow-x:auto">
+    <table class="compare-table">
+      <thead>
+        <tr><th>Feature</th><th>Free</th><th>Pro</th><th>Enterprise</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>AI analyses / month</td><td>5</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr><td>Chart types</td><td>Chart.js (basic)</td><td>Chart.js + matplotlib</td><td>Chart.js + matplotlib</td></tr>
+        <tr><td>Export formats</td><td>PNG, CSV</td><td>PNG, SVG, CSV</td><td>PNG, SVG, CSV</td></tr>
+        <tr><td>Projects</td><td>1</td><td>Unlimited</td><td>Unlimited</td></tr>
+        <tr><td>Block editor & slash commands</td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>Present mode</td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>Literature manager</td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>API access</td><td><span class="no">—</span></td><td><span class="no">—</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>On-premise deployment</td><td><span class="no">—</span></td><td><span class="no">—</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>White-label</td><td><span class="no">—</span></td><td><span class="no">—</span></td><td><span class="yes">✓</span></td></tr>
+        <tr><td>Team collaboration</td><td><span class="no">—</span></td><td><span class="no">—</span></td><td><span class="yes">✓</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="section-inner">
+    <div class="cta">
+      <h2>Stop fighting your tools.<br>Start doing science.</h2>
+      <p>Free to start. No credit card. Your data stays yours — always.</p>
+      <a href="/login" class="btn btn-primary" style="font-size:16px;padding:14px 36px">Try Virgo Agent Free →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Virgo Agent · Built for materials scientists, by materials scientists</p>
+</footer>
+
+</body>
+</html>
