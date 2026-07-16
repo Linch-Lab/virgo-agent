@@ -59,9 +59,20 @@ CREATE POLICY "Users can CRUD own plots" ON plots
         auth.uid() = (SELECT owner_id FROM projects WHERE id = project_id)
     );
 
+-- Skills 表（核心賣點 — 存在後端）
+CREATE TABLE IF NOT EXISTS skills (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    prompt TEXT NOT NULL,
+    category VARCHAR(128) DEFAULT 'General',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- 授權 service_role（繞過 RLS 給後端 API 用）
 GRANT ALL ON users TO service_role;
 GRANT ALL ON api_keys TO service_role;
 GRANT ALL ON projects TO service_role;
 GRANT ALL ON plots TO service_role;
+GRANT ALL ON skills TO service_role;
 GRANT USAGE ON SCHEMA public TO service_role;
