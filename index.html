@@ -1,0 +1,2632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0">
+<title>Virgo Agent — AI Research Notebook</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#fafaf8;--card:#fff;--bdr:#d8d8d2;--txt:#1a1a1a;--muted:#666;--acc:#2c5f8a;--grn:#2a7d4f;--red:#b33;--warn:#b8860b}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--txt);height:100vh;overflow:hidden;display:flex}
+.sidebar{width:240px;min-width:240px;background:#f5f4f0;border-right:1px solid var(--bdr);display:flex;flex-direction:column;overflow-y:auto;z-index:10;flex-shrink:0}
+.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
+.sidebar-header .logo{font-size:16px;font-weight:700;color:var(--acc)}
+.sidebar-header .badge{font-size:10px;background:var(--grn);color:#fff;padding:1px 6px;border-radius:3px}
+.present-btn{font-size:9px;padding:4px 10px;margin-left:auto;border:1px solid var(--acc);background:#fff;color:var(--acc);border-radius:3px;cursor:pointer}
+.present-btn:hover,.present-btn.on{background:var(--acc);color:#fff}
+.nav-section{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 2px;font-size:8px;text-transform:uppercase;color:var(--muted);letter-spacing:1.5px;margin-top:6px}
+.nav-section .add-page-btn{font-size:14px;cursor:pointer;color:var(--muted);line-height:1;padding:0 3px}
+.nav-section .add-page-btn:hover{color:var(--acc)}
+.nav-item{display:flex;align-items:center;gap:6px;padding:5px 16px 5px 18px;cursor:pointer;font-size:11px;color:var(--muted);border-left:3px solid transparent;transition:all .15s}
+.nav-item:hover{background:#edece7;color:var(--txt)}
+.nav-item.active{background:#e8e6df;color:var(--acc);border-left-color:var(--acc);font-weight:600}
+.nav-item .nav-actions{display:none;margin-left:auto;gap:2px}
+.nav-item:hover .nav-actions{display:flex}
+.nav-item .nav-actions button{font-size:8px;background:none;border:none;cursor:pointer;color:var(--muted);padding:1px 3px}
+.nav-item .nav-actions button:hover{color:var(--red)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{padding:10px 24px;border-bottom:1px solid var(--bdr);background:var(--bg);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.topbar-left h1{font-size:14px;font-weight:600}
+.breadcrumb{font-size:9px;color:var(--muted);margin-top:2px}
+.page-container{flex:1;overflow-y:auto;min-height:0}
+.page{padding:20px 24px;display:none}
+.page.active{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:4px;padding:18px 22px;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:10px}
+.card-grid{display:grid;gap:12px}
+.card-grid.cols2{grid-template-columns:1fr 1fr}
+.card-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.data-tbl{width:100%;font-size:10px;border-collapse:collapse;margin-top:6px}
+.data-tbl th{text-align:left;padding:4px 8px;background:#f5f4f0;color:var(--muted);font-weight:500;border-bottom:1px solid var(--bdr);font-size:9px}
+.data-tbl td{padding:3px 8px;border-bottom:1px solid #eee}
+.data-tbl .hl{color:var(--acc);font-weight:600}
+.chat-msgs{overflow-y:auto;display:flex;flex-direction:column;gap:5px;font-size:10px;max-height:200px;min-height:80px;padding:4px}
+.chat-msg{padding:5px 9px;border-radius:4px;max-width:92%;line-height:1.45;font-size:10px}
+.chat-msg.user{align-self:flex-end;background:var(--acc);color:#fff}
+.chat-msg.agent{align-self:flex-start;background:#f0efe9;color:var(--txt);border:1px solid #e0ddd4}
+.inline-editor{outline:none;min-height:60vh;font-size:13px;line-height:1.9;color:var(--txt);padding:4px 0}
+.inline-editor:empty:before{content:'Click to edit…';color:var(--muted);font-style:italic}
+.inline-editor:focus{outline:none}
+.inline-editor h3{font-size:15px;font-weight:600;margin:16px 0 8px}
+.inline-editor p{margin:6px 0}
+/* Notion-style blocks */
+.notion-blocks{position:relative;min-height:40vh}
+.notion-block{display:flex;align-items:flex-start;gap:4px;padding:3px 0;border-radius:3px;transition:background .12s;position:relative}
+.notion-block:hover{background:rgba(0,0,0,.02)}
+.notion-block.dragging{opacity:.4}
+.notion-block.drag-over{border-top:2px solid var(--acc)}
+.block-handle{width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:grab;color:var(--muted);font-size:12px;opacity:0;transition:opacity .12s;flex-shrink:0;user-select:none;border-radius:2px}
+.notion-block:hover .block-handle,.block-handle.show{opacity:.5}
+.notion-block:hover .block-handle:hover{opacity:1;background:rgba(0,0,0,.06)}
+.block-handle:active{cursor:grabbing}
+.block-content{flex:1;min-width:0;outline:none;font-size:13px;line-height:1.9;padding:2px 0;color:#000}
+.block-content:empty:before{content:'Type / for commands…';color:var(--muted);font-style:italic}
+.block-content h3,.block-content h2,.block-content h4{font-size:15px;font-weight:600;margin:8px 0 4px}
+.block-content p{margin:4px 0}
+.block-plus{position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:50%;border:1px solid var(--bdr);background:var(--card);color:var(--muted);font-size:14px;line-height:1;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2}
+.notion-block:hover .block-plus,.notion-block:last-child .block-plus{display:flex}
+/* Side-by-side columns */
+.block-row{display:flex;gap:12px;margin:4px 0}
+.block-row>.notion-block{flex:1;min-width:0}
+.block-row>.notion-block+.notion-block{border-left:1px solid var(--bdr);padding-left:12px}
+.block-drop-left{box-shadow:inset 4px 0 0 var(--acc)}
+.block-drop-right{box-shadow:inset -4px 0 0 var(--acc)}
+.save-indicator{position:fixed;top:12px;right:24px;font-size:10px;color:var(--grn);background:var(--card);padding:4px 10px;border-radius:3px;border:1px solid var(--bdr);z-index:300;transition:opacity .3s}
+.chat-input-row{display:flex;gap:4px;margin-top:4px}
+.chat-input-row input{flex:1;padding:5px 8px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);font-size:10px}
+.chat-input-row button{padding:5px 12px;border:1px solid var(--bdr);background:var(--acc);color:#fff;font-size:10px;cursor:pointer}
+.btn{padding:5px 12px;border-radius:3px;border:1px solid var(--bdr);font-size:10px;cursor:pointer;background:var(--card);color:var(--txt)}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn.prim{background:var(--acc);color:#fff;border:none}
+.btn.grn{background:var(--grn);color:#fff;border:none}
+.btn.red{background:var(--red);color:#fff;border:none}
+.btn.sm{padding:3px 7px;font-size:9px}
+.stitle{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:2px;font-weight:600}
+label{font-size:10px;color:var(--muted);display:block;margin-bottom:2px}
+input[type=text],input[type=number],input[type=password],textarea,select{width:100%;padding:5px 8px;border:1px solid var(--bdr);font-size:10px;background:var(--card);color:var(--txt);border-radius:3px;margin-bottom:6px;font-family:inherit}
+textarea{resize:vertical;min-height:40px}
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:4px;font-size:11px;background:var(--grn);color:#fff;z-index:999;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* Analysis page layout */
+.analysis-layout{display:flex;gap:16px;min-height:400px}
+.analysis-chart{flex:1;min-width:0;background:var(--card);border:1px solid var(--bdr);border-radius:4px;padding:16px;display:flex;flex-direction:column}
+.analysis-chart canvas{width:100%!important;max-height:380px}
+.analysis-side{width:320px;min-width:320px;display:flex;flex-direction:column;gap:12px}
+.analysis-side .card{padding:14px 16px;margin-bottom:0}
+.analysis-side .card h4{font-size:11px;margin-bottom:8px;color:var(--acc)}
+
+/* Modals */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:var(--card);border-radius:6px;padding:24px;width:640px;max-height:90vh;overflow-y:auto}
+.modal-box h3{font-size:14px;margin-bottom:14px}
+.modal-box .csv-preview{max-height:200px;overflow:auto;font-size:9px;font-family:monospace;background:#f5f4f0;padding:8px;border-radius:3px;margin:8px 0;white-space:pre;line-height:1.4}
+.modal-box .step{display:none}
+.modal-box .step.active{display:block}
+
+/* Present mode — 16:9 slide */
+body.presenting{background:#1a1a1a;cursor:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='5' fill='%23ff3333' opacity='0.9'/><circle cx='12' cy='12' r='10' fill='none' stroke='%23ff3333' stroke-width='1' opacity='0.35'/></svg>") 12 12,auto}
+body.presenting *{user-select:none!important;-webkit-user-select:none!important}
+body.presenting [contenteditable]{pointer-events:none;caret-color:transparent;cursor:inherit}
+body.presenting .sidebar{display:none}
+body.presenting .topbar{display:none}
+body.presenting .main{background:#1a1a1a}
+body.presenting .page-container{display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden}
+body.presenting .slide{width:100%;max-width:calc(100vh*16/9);aspect-ratio:16/9;max-height:100vh;overflow-y:auto;overflow-x:hidden;background:var(--bg);position:relative}
+body.presenting .page{padding:40px 56px;min-height:100%;box-sizing:border-box;gap:16px}
+body.presenting .page.active{min-height:100%;justify-content:flex-start}
+body.presenting .card{max-width:100%;margin-bottom:12px}
+body.presenting .edit-btn-row{display:none}
+body.presenting .inline-editor{pointer-events:none;user-select:none;-webkit-user-select:none}
+body.presenting .notion-blocks{pointer-events:none;user-select:none;-webkit-user-select:none}
+body.presenting .block-handle{display:none!important}
+body.presenting .block-plus{display:none!important}
+body.presenting .save-indicator{display:none!important}
+body.presenting .slide-counter{display:block;position:fixed;bottom:16px;right:24px;font-size:12px;color:rgba(255,255,255,.6);z-index:200}
+body.presenting .slide-hint{display:block;position:fixed;bottom:16px;left:24px;font-size:11px;color:rgba(255,255,255,.6);z-index:200}
+/* Comic grid in present: fill the slide */
+body.presenting .comic-grid{min-height:calc(100vh*9/16 - 120px);aspect-ratio:auto}
+.slide-counter,.slide-hint{display:none}
+/* Edit mode — subtle 16:9 max constraint */
+.page-container{flex:1;overflow-y:auto;min-height:0}
+.slide{width:100%;max-width:min(1200px,calc((100vh - 60px)*16/9));margin:0 auto}
+/* 四格漫畫 — fixed 2x2 grid filling the page */
+.comic-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:calc(100vh - 100px)}
+.comic-panel{border:2px solid var(--bdr);border-radius:4px;padding:14px 16px;background:var(--card);display:flex;flex-direction:column;overflow:hidden}
+.comic-panel .cp-num{font-size:22px;font-weight:700;color:var(--acc);margin-bottom:2px;line-height:1;flex-shrink:0}
+.comic-panel .cp-title{font-size:11px;font-weight:600;margin-bottom:8px;border-bottom:1px solid var(--bdr);padding-bottom:6px;flex-shrink:0}
+.comic-panel .cp-body{font-size:9.5px;color:#000;line-height:1.6;flex:1;overflow-y:auto;outline:none}
+.comic-panel .cp-body:focus{outline:none}
+.comic-panel .cp-body b{color:var(--txt)}
+.comic-panel:nth-child(1) .cp-num{color:#2c5f8a}
+.comic-panel:nth-child(2) .cp-num{color:#b8860b}
+.comic-panel:nth-child(3) .cp-num{color:#2a7d4f}
+.comic-panel:nth-child(4) .cp-num{color:#b33}
+/* Flowchart */
+.flow-list{display:flex;flex-direction:column;align-items:center;gap:0}
+.flow-item{display:flex;align-items:center;gap:8px;padding:12px 16px;border:2px solid var(--bdr);border-radius:6px;background:var(--card);cursor:grab;width:100%;max-width:500px;transition:all .2s;user-select:none}
+.flow-item:active{cursor:grabbing}
+.flow-item.dragging{opacity:.4;border-style:dashed}
+.flow-item.drag-over{border-color:var(--acc);box-shadow:0 0 0 3px rgba(44,95,138,.15)}
+.flow-item .flow-num{font-size:20px;font-weight:700;color:var(--acc);min-width:32px;text-align:center}
+.flow-item .flow-info{flex:1;min-width:0}
+.flow-item .flow-info .flow-title{font-size:11px;font-weight:600;margin-bottom:2px}
+.flow-item .flow-info .flow-preview{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow-item .flow-drag{font-size:14px;color:var(--muted);cursor:grab;padding:4px}
+.flow-arrow{font-size:18px;color:var(--muted);padding:2px 0}
+.flow-add{border:2px dashed var(--bdr);padding:10px 16px;border-radius:6px;width:100%;max-width:500px;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);transition:all .2s}
+.flow-add:hover{border-color:var(--acc);color:var(--acc)}
+/* Slash command menu */
+.slash-menu{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:2000;display:none;min-width:220px;max-height:320px;overflow-y:auto;padding:4px}
+.slash-menu .slash-item{padding:6px 10px;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:8px;border-radius:3px}
+.slash-menu .slash-item:hover,.slash-menu .slash-item.selected{background:#edece7}
+.slash-menu .slash-item .slash-icon{font-size:14px;width:22px;text-align:center}
+.slash-menu .slash-item .slash-label{font-weight:600}
+.slash-menu .slash-item .slash-desc{font-size:9px;color:var(--muted);margin-left:auto}
+/* Floating format toolbar — appears on text selection */
+.format-bar{position:fixed;background:var(--card);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:1999;display:none;padding:4px 6px;gap:2px;align-items:center}
+.format-bar button{width:30px;height:28px;border:none;background:transparent;border-radius:4px;cursor:pointer;font-size:13px;color:var(--txt);display:flex;align-items:center;justify-content:center}
+.format-bar button:hover{background:#edece7}
+.format-bar button.active{background:var(--acc);color:#fff}
+.format-bar .fb-divider{width:1px;height:16px;background:var(--bdr);margin:0 3px}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <span class="logo">Virgo Agent</span>
+    <button class="present-btn" onclick="togglePresent()">▶ Present</button>
+  </div>
+  <div id="sidebarNav"></div>
+</div>
+
+<div class="main">
+<div class="topbar">
+  <div class="topbar-left"><h1 id="pageTitle">Virgo Agent</h1><div class="breadcrumb" id="breadcrumb"></div></div>
+  <div class="topbar-actions"><span id="dbStatus" style="font-size:9px;color:var(--muted)"></span><button class="btn sm" onclick="exportAllJSON()">📥 Export</button><button class="btn sm prim present-btn" onclick="togglePresent()">▶ Present</button></div>
+</div>
+<div class="page-container" id="pageContainer"></div>
+</div>
+
+<!-- Analysis Modal -->
+<div class="modal-overlay" id="analysisModal">
+  <div class="modal-box">
+    <div id="amStep1" class="step active">
+      <h3>🔬 New Analysis</h3>
+      <label>Select Skill</label>
+      <select id="amSkill" onchange="updateSkillDesc()"></select>
+      <div id="amSkillDesc" style="font-size:9px;color:var(--muted);margin:4px 0 8px"></div>
+      <label>Changed Parameter</label>
+      <input type="text" id="amParam" placeholder="e.g. CVD temperature = 970°C">
+      <label>Upload CSV Data</label>
+      <input type="file" id="amFile" accept=".csv,.txt" onchange="previewCSV()">
+      <div class="csv-preview" id="amPreview"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn prim" onclick="processAnalysis()" id="amProcessBtn" disabled>🤖 Process with AI</button>
+        <button class="btn" onclick="closeAnalysisModal()">Cancel</button>
+      </div>
+    </div>
+    <div id="amStep2" class="step">
+      <h3>⏳ AI Processing...</h3>
+      <div id="amProgress" style="font-size:10px;color:var(--muted)">Uploading data to DeepSeek...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Page Editor Modal -->
+<div class="modal-overlay" id="pageEditor">
+  <div class="modal-box">
+    <h3 id="peTitle">New Page</h3>
+    <input type="hidden" id="peId"><label>Section</label><input type="text" id="peSection"><label>Title</label><input type="text" id="peName">
+    <label>Content</label>
+    <div style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap">
+      <button class="btn sm" onclick="execCmd('bold')" title="Bold"><b>B</b></button>
+      <button class="btn sm" onclick="execCmd('italic')" title="Italic"><i>I</i></button>
+      <button class="btn sm" onclick="execCmd('formatBlock','h3')" title="Heading">H3</button>
+      <button class="btn sm" onclick="execCmd('insertUnorderedList')" title="Bullet List">• List</button>
+    </div>
+    <div id="peContent" contenteditable="true" style="min-height:200px;max-height:400px;overflow-y:auto;border:1px solid var(--bdr);padding:12px;font-size:12px;line-height:1.7;background:var(--card);border-radius:3px;outline:none;font-family:Georgia,'Times New Roman',serif"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim" onclick="savePage()">💾 Save</button><button class="btn" onclick="closeEditor()">Cancel</button><button class="btn red sm" id="peDelete" style="display:none;margin-left:auto" onclick="deletePage()">🗑 Delete</button></div>
+  </div>
+</div>
+
+
+<!-- Literature Editor Modal -->
+<div class="modal-overlay" id="litEditor">
+  <div class="modal-box">
+    <h3 id="litTitle">📚 Add Literature</h3>
+    <input type="hidden" id="litId"><input type="hidden" id="litSection">
+    <div style="display:flex;gap:8px;margin-bottom:8px">
+      <button class="btn sm" onclick="litImportBibtex()" style="flex:1">📋 Import BibTeX</button>
+      <button class="btn sm" onclick="litImportUrl()" style="flex:1">🔗 Paste URL</button>
+    </div>
+    <div class="card-grid cols2">
+      <div><label>Title</label><input type="text" id="litTitleField" placeholder="Paper title"></div>
+      <div><label>Authors</label><input type="text" id="litAuthors" placeholder="Last, First and Last, First"></div>
+    </div>
+    <div class="card-grid cols2">
+      <div><label>Journal</label><input type="text" id="litJournal" placeholder="Journal name"></div>
+      <div><label>Year / DOI</label><input type="text" id="litYearDoi" placeholder="2024 / 10.xxxx/xxxxx"></div>
+    </div>
+    <label>Abstract / Notes <span style="font-size:9px;color:var(--muted);font-weight:400">(drag & drop or paste images)</span></label>
+    <div id="litNotes" contenteditable="true" style="min-height:120px;max-height:300px;overflow-y:auto;border:1px solid var(--bdr);padding:12px;font-size:12px;line-height:1.7;background:var(--card);border-radius:3px;outline:none;font-family:Georgia,'Times New Roman',serif"></div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim" onclick="saveLiterature()">💾 Save</button><button class="btn" onclick="closeLitEditor()">Cancel</button><button class="btn red sm" id="litDelete" style="display:none;margin-left:auto" onclick="deleteLiterature()">🗑 Delete</button></div>
+  </div>
+</div>
+
+<!-- Add Step Modal -->
+<div class="modal-overlay" id="stepModal">
+  <div class="modal-box">
+    <h3>➕ Add Experimental Step</h3>
+    <label>Step Title</label>
+    <input type="text" id="smTitle" placeholder="e.g. XRD Characterization">
+    <label>① Fixed Parameters <span style="color:var(--muted);font-weight:400">(Param: value, one per line)</span></label>
+    <textarea id="smFixed" rows="3" placeholder="Substrate: Ni foam&#10;Temperature: 180 °C"></textarea>
+    <label>② Variable Parameters</label>
+    <textarea id="smVar" rows="3" placeholder="Coating: Bare vs Graphite&#10;Time: 10 / 30 / 60 min"></textarea>
+    <label>③ Detection <span style="color:var(--muted);font-weight:400">(methods, one per line)</span></label>
+    <textarea id="smDetect" rows="2" placeholder="SEM — surface morphology&#10;XRD — phase analysis"></textarea>
+    <label>🔬 Link Skills <span style="color:var(--muted);font-weight:400">(auto-creates + Add Analysis in Results)</span></label>
+    <div id="smSkills" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+    <label>④ Benchmark</label>
+    <textarea id="smBench" rows="3" placeholder="Threshold: > 500 mA/cm²&#10;✅ Result: 763 mA/cm²"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn prim" onclick="saveStep()">💾 Save Step</button>
+      <button class="btn" onclick="closeStepModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="slide-counter" id="slideCounter"></div>
+<div class="slide-hint">← → to navigate · Esc to exit</div>
+
+<!-- Slash command menu -->
+<div class="slash-menu" id="slashMenu"></div>
+
+<!-- Floating format toolbar (appears on text selection) -->
+<div class="format-bar" id="formatBar">
+  <button onclick="formatCmd('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+  <button onclick="formatCmd('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+  <button onclick="formatCmd('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+  <span class="fb-divider"></span>
+  <button onclick="formatCmd('strikeThrough')" title="Strikethrough"><s>S</s></button>
+  <button onclick="formatCmd('code')" title="Inline code" style="font-family:monospace">&lt;/&gt;</button>
+  <span class="fb-divider"></span>
+  <button onclick="formatLink()" title="Link">🔗</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// Virgo Agent — AI Research Notebook
+// ═══════════════════════════════════════════
+const DB_NAME='virgo_agent',DB_VER=5;
+var db=null;
+
+function openDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,DB_VER);req.onupgradeneeded=(e)=>{const d=e.target.result;if(!d.objectStoreNames.contains('experiments'))d.createObjectStore('experiments',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('settings'))d.createObjectStore('settings',{keyPath:'key'});if(!d.objectStoreNames.contains('chat_history'))d.createObjectStore('chat_history',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('pages'))d.createObjectStore('pages',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('skills'))d.createObjectStore('skills',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('analyses'))d.createObjectStore('analyses',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id',autoIncrement:true});if(!d.objectStoreNames.contains('literature'))d.createObjectStore('literature',{keyPath:'id',autoIncrement:true});};req.onsuccess=(e)=>{db=e.target.result;resolve(db)};req.onerror=(e)=>reject(e.target.error)})}
+function dbPut(s,d){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).put(d);t.oncomplete=()=>{r(q.result);scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+function dbGetAll(s){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).getAll();t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
+function dbGet(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readonly');const q=t.objectStore(s).get(k);t.oncomplete=()=>r(q.result);t.onerror=(e)=>j(e.target.error)})}
+function dbDelete(s,k){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).delete(k);t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+function dbClear(s){return new Promise((r,j)=>{const t=db.transaction(s,'readwrite');const q=t.objectStore(s).clear();t.oncomplete=()=>{r();scheduleMirror()};t.onerror=(e)=>j(e.target.error)})}
+
+// ══════════ P0: localStorage crash mirror ══════════
+var _mirrorTimer=null;
+const MIRROR_KEY='_virgo_backup';
+function scheduleMirror(){
+  clearTimeout(_mirrorTimer);
+  _mirrorTimer=setTimeout(mirrorToLocalStorage,2000);
+}
+async function mirrorToLocalStorage(){
+  try{
+    const stores=['pages','settings','projects','skills','literature','analyses','experiments','chat_history'];
+    var snap={_v:2,_ts:new Date().toISOString(),stores:{}};
+    for(var s of stores){
+      try{snap.stores[s]=await dbGetAll(s)||[]}catch(e){snap.stores[s]=[]}
+    }
+    var json=JSON.stringify(snap);
+    // If too large, drop heavy stores
+    if(json.length>4*1024*1024){ // >4MB
+      delete snap.stores.analyses;delete snap.stores.chat_history;delete snap.stores.experiments;
+      json=JSON.stringify(snap);
+    }
+    if(json.length>5*1024*1024){console.warn('Mirror still too large, skipping');return}
+    localStorage.setItem(MIRROR_KEY,json);
+  }catch(e){console.warn('Mirror failed',e)}
+}
+// ══════════ P0: Auto-recover from localStorage ══════════
+async function recoverFromMirror(){
+  try{
+    var raw=localStorage.getItem(MIRROR_KEY);
+    if(!raw)return false;
+    var snap=JSON.parse(raw);
+    if(!snap||!snap.stores||snap._v<2)return false;
+    for(var s in snap.stores){
+      var records=snap.stores[s];
+      for(var r of records)await dbPut(s,r);
+    }
+    console.log('Recovered from localStorage mirror:',Object.keys(snap.stores).map(function(k){return k+':'+snap.stores[k].length}).join(', '));
+    return true;
+  }catch(e){console.warn('Recovery failed',e);return false}
+}
+
+// ═══════════════════════════════════════
+// SKILLS
+// ═══════════════════════════════════════
+const SEED_SKILLS=[
+  {name:'Polarization Curve (PEMFC)',category:'Electrochemistry',desc:'I-V polarization curve for fuel cells. CSV columns: Voltage(V), Current(mA/cm²) or Power(mW/cm²). Extract OCV, i@0.6V, peak power density.',keyParams:'OCV (V), i@0.6V (mA/cm²), Peak Power (mW/cm²)',chartType:'line',chartTemplate:'{"type":"line","data":{"datasets":[{"label":"I-V","borderColor":"#2c5f8a","tension":0.3}]},"options":{"scales":{"x":{"title":{"display":true,"text":"Current Density (mA/cm²)"}},"y":{"title":{"display":true,"text":"Cell Voltage (V)"}}}}}'},
+  {name:'EIS Nyquist',category:'Electrochemistry',desc:'Electrochemical impedance spectroscopy. CSV columns: Zre(ohm), -Zim(ohm). Extract Rohm, Rct.',keyParams:'Rohm (Ω cm²), Rct (Ω cm²)',chartType:'scatter',chartTemplate:'{"type":"scatter","data":{"datasets":[{"label":"EIS","borderColor":"#2c5f8a","backgroundColor":"#2c5f8a","showLine":true,"tension":0.4,"pointRadius":3}]},"options":{"scales":{"x":{"title":{"display":true,"text":"Z′ (Ω cm²)"}},"y":{"title":{"display":true,"text":"-Z′′ (Ω cm²)"}}}}}'},
+  {name:'Tafel Plot',category:'Electrochemistry',desc:'Potentiodynamic polarization. CSV columns: Potential(V), log(i/A). Extract icorr, Ecorr.',keyParams:'icorr (μA/cm²), Ecorr (V)',chartType:'line',chartTemplate:'{"type":"line","data":{"datasets":[{"label":"Tafel","borderColor":"#b33","tension":0.3}]},"options":{"scales":{"x":{"title":{"display":true,"text":"log(i / A cm⁻²)"}},"y":{"title":{"display":true,"text":"Potential (V)"}}}}}'},
+  {name:'Durability (Voltage vs Time)',category:'Durability',desc:'Constant-current durability test. CSV columns: Time(h), Voltage(V). Extract decay rate.',keyParams:'Decay Rate (mV/h), OCV Drop (mV)',chartType:'line',chartTemplate:'{"type":"line","data":{"datasets":[{"label":"Voltage","borderColor":"#2c5f8a","tension":0.3,"pointRadius":2}]},"options":{"scales":{"x":{"title":{"display":true,"text":"Time (hours)"}},"y":{"title":{"display":true,"text":"Voltage (V)"}}}}}'},
+  {name:'Generic CSV',category:'General',desc:'Any CSV data. AI will auto-detect columns, units, and plot type.',keyParams:'Auto-detected',chartType:'line',chartTemplate:'{"type":"line","data":{"datasets":[{"label":"Data","borderColor":"#2c5f8a","tension":0.3}]},"options":{}}'},
+];
+
+// ═══════════════════════════════════════
+// SEED DATA
+// ═══════════════════════════════════════
+const SEED_PAGES=[
+  {section:'Purpose',title:'1. Purpose',content:`<div class="card"><h3>Project Purpose</h3><p style="font-size:11px;line-height:1.8">Develop <b>graphite-coated Ni foam</b> as corrosion-resistant bipolar plates for <b>HT-PEMFC</b>. APCVD graphite coating suppresses Ni corrosion in hot H₃PO₄ while maintaining conductivity.<br><br><b>Key Results:</b> 763 mA/cm² @ 0.6V (180°C), −58% icorr, −48% voltage decay rate. Published IJHE 2024.</p></div>`},
+  {section:'Literature',title:'2.1 Introduction',content:`<div class="card"><h3>2.1 Introduction</h3><p style="font-size:10px;line-height:1.6"><b>HT-PEMFC bipolar plate corrosion</b> is a critical bottleneck. Ni foam offers low cost and high conductivity but corrodes in hot H₃PO₄. <b>APCVD graphite coating</b> is explored as a protective, conductive barrier.<br><br>Key references: <i>Int. J. Hydrogen Energy</i> 2024; <i>J. Power Sources</i> 2023; <i>Electrochim. Acta</i> 2022.</p></div>`},
+  {section:'Literature',title:'2.2 XRD',content:`<div class="card"><h3>2.2 XRD Analysis</h3><p style="font-size:10px;line-height:1.6"><b>X-ray diffraction</b> confirms graphitic carbon (002) peak at 26.5° and Ni (111)/(200) substrate peaks. ID/IG from Raman correlates with XRD crystallite size L<sub>a</sub>. Graphite coating at 970°C shows highest crystallinity.</p></div>`},
+  {section:'Literature',title:'2.3 TEM',content:`<div class="card"><h3>2.3 TEM Characterization</h3><p style="font-size:10px;line-height:1.6"><b>Transmission electron microscopy</b> reveals turbostratic graphite layers (d<sub>002</sub> ≈ 0.34 nm). Coating thickness uniform at 1.65 μm. No Ni diffusion into carbon layer detected by EELS.</p></div>`},
+  {section:'Literature',title:'2.4 Raman for Carbon',content:`<div class="card"><h3>2.4 Raman Spectroscopy of Carbon</h3><p style="font-size:10px;line-height:1.6"><b>D band (~1350 cm⁻¹)</b> — disorder-induced; <b>G band (~1580 cm⁻¹)</b> — graphitic sp². ID/IG ratio quantifies defect density. 2D band shape distinguishes few-layer vs bulk graphite. APCVD at 970°C yields ID/IG = 0.42, indicating moderate graphitization suitable for corrosion protection.</p></div>`},
+  {section:'Goals',title:'3. Goals',content:`<div class="card"><h3>Project Goals</h3><table class="data-tbl"><tr><th>#</th><th>Goal</th><th>Status</th></tr><tr><td>1</td><td>CVD temperature optimization (850–1050°C)</td><td>✅ 970°C optimal</td></tr><tr><td>2</td><td>Coating characterization (SEM, Raman)</td><td>✅ ID/IG=0.42, 1.65μm</td></tr><tr><td>3</td><td>Corrosion test (150°C, pH 3 H₃PO₄)</td><td>✅ −58% icorr</td></tr><tr><td>4</td><td>Single-cell performance</td><td>✅ 763 mA/cm² @ 0.6V</td></tr><tr><td>5</td><td>200h durability test</td><td>✅ −48% decay</td></tr></table></div>`},
+  {section:'Experimental',title:'1. APCVD',content:`<div class="card"><h3>Step 1 — APCVD Graphite Coating</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body"><b>Substrate:</b> Ni foam (1.6 mm, 95% porosity)<br><b>Precursor:</b> CH₄ (99.9%)<br><b>Carrier gas:</b> Ar (99.999%)<br><b>Pressure:</b> Atmospheric<br><b>Reactor:</b> Horizontal quartz tube furnace<br><b>Deposition time:</b> 30 min</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body"><b>Temperature:</b> 850 / 900 / 950 / 970 / 1000 / 1050 °C<br><b>Gas flow ratio:</b> CH₄:Ar = 1:4<br><br><i>970 °C selected as optimum — balances graphitization (low ID/IG) with thickness uniformity.</i></div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body"><b>SEM</b> — surface morphology & coverage<br><b>Raman</b> — ID/IG ratio (defect density)<br><b>Cross-section SEM</b> — coating thickness<br><b>XRD</b> — crystallinity & phase</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body"><b>ID/IG ⩽ 0.5</b> — sufficient graphitization<br><b>Thickness 1.5–2.0 μm</b> — uniform coverage<br><b>No exposed Ni</b> — full coverage in SEM<br><br>✅ <b>Result:</b> ID/IG = 0.42, thickness = 1.65 μm @ 970 °C</div></div></div></div>`},
+  {section:'Experimental',title:'2. Corrosion',content:`<div class="card"><h3>Step 2 — Corrosion Test</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body"><b>Electrolyte:</b> H₃PO₄ (pH 3, conc. 0.5 M)<br><b>Temperature:</b> 150 °C<br><b>Cell:</b> 3-electrode (Pt counter, Ag/AgCl ref.)<br><b>Scan rate:</b> 1 mV/s<br><b>Exposure:</b> 24 h pre-immersion</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body"><b>Sample type:</b> Bare Ni foam vs. Graphite/Ni foam<br><b>Coating temperature:</b> 970 °C (optimal from Step 1)<br><br><i>Graphite coating acts as a physical barrier — suppresses Ni dissolution & oxidation in hot H₃PO₄.</i></div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body"><b>Potentiodynamic polarization</b> — icorr, Ecorr<br><b>EIS</b> — Rohm, Rct (charge transfer resistance)<br><b>Post-mortem SEM</b> — surface degradation</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body"><b>icorr reduction > 50%</b> vs bare Ni<br><b>Rct increase > 2×</b> — higher corrosion resistance<br><b>No visible pitting</b> — post-test SEM<br><br>✅ <b>Result:</b> icorr −58% (2.10→0.88 μA/cm²), Rct 2.4× (1240→2950 Ω cm²)</div></div></div></div>`},
+  {section:'Experimental',title:'3. Assembly',content:`<div class="card"><h3>Step 3 — MEA & Single-Cell Assembly</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body"><b>Membrane:</b> PBI (phosphoric acid-doped)<br><b>Catalyst:</b> Pt/C (0.5 mgPt/cm² both sides)<br><b>Active area:</b> 5 cm²<br><b>GDL:</b> Carbon paper (Toray 060)<br><b>Torque:</b> 5 N·m (uniform compression)</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body"><b>Bipolar plate:</b> Bare Ni vs. Graphite/Ni foam<br><b>Gasket:</b> PTFE, thickness matched to GDL compression<br><br><i>Graphite coating on Ni foam serves as both corrosion barrier and conductive bipolar plate — eliminates graphite plate machining cost.</i></div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body"><b>Leak test:</b> N₂ pressurization @ 0.5 bar<br><b>Contact resistance:</b> 4-probe method<br><b>Cross-section:</b> verify layer alignment</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body"><b>Leak rate < 0.1 mL/min</b> — gas tight<br><b>Contact resistance < 20 mΩ cm²</b><br><b>OCV > 0.90 V</b> — no short circuit<br><br>✅ <b>Result:</b> No leak, contact resistance 12 mΩ cm², OCV 0.93 V</div></div></div></div>`},
+  {section:'Experimental',title:'4. Performance',content:`<div class="card"><h3>Step 4 — Single-Cell Performance</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body"><b>Fuel:</b> H₂ (99.999%, 200 mL/min)<br><b>Oxidant:</b> Air (400 mL/min)<br><b>No humidification</b> — HT-PEMFC<br><b>Back pressure:</b> Ambient<br><b>Activation:</b> 2 h @ 0.6 V before test</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body"><b>Temperature:</b> 160 / 170 / 180 °C<br><b>Bipolar plate:</b> Bare Ni vs. Graphite/Ni<br><br><i>Higher temperature → faster kinetics + reduced Pt poisoning. Graphite plate prevents Ni corrosion that poisons catalyst.</i></div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body"><b>I-V polarization</b> — OCV, i@0.6V, peak power<br><b>EIS @ 0.6V</b> — Rohm, Rct, Rmt<br><b>HFR</b> — high-frequency resistance</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body"><b>i@0.6V > 700 mA/cm²</b> @ 180 °C<br><b>Peak power > 400 mW/cm²</b><br><b>Rohm < 100 mΩ cm²</b><br><br>✅ <b>Result:</b> 763 mA/cm² @ 0.6V, 458 mW/cm² peak, Rohm 72 mΩ cm² @ 180 °C (Graphite)</div></div></div></div>`},
+  {section:'Experimental',title:'5. Durability',content:`<div class="card"><h3>Step 5 — 200h Durability Test</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body"><b>Mode:</b> Galvanostatic (constant current)<br><b>Current density:</b> 200 mA/cm²<br><b>Temperature:</b> 180 °C<br><b>H₂/Air flow:</b> 200/400 mL/min<br><b>Sampling:</b> I-V + EIS every 50 h</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body"><b>Bipolar plate:</b> Bare Ni vs. Graphite/Ni<br><br><i>Long-term corrosion of Ni plate poisons catalyst (Ni²⁺ replaces H⁺ in PBI). Graphite barrier prevents this degradation pathway.</i></div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body"><b>Voltage monitoring</b> — continuous @ 200 mA/cm²<br><b>EIS every 50 h</b> — track Rct growth<br><b>Post-mortem ICP</b> — Ni dissolution in MEA<br><b>Post-mortem SEM</b> — plate surface</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body"><b>Voltage decay < 0.3 mV/h</b><br><b>OCV drop < 20 mV</b> over 200 h<br><b>Rct growth < 50%</b> — minimal catalyst poisoning<br><br>✅ <b>Result:</b> 0.25 mV/h decay, −18 mV OCV drop, Rct growth +45% (Graphite vs −48% improvement over Bare)</div></div></div></div>`},
+  {section:'Results',title:'1. APCVD Results',content:`<div class="card"><h3>CVD Temperature Optimization</h3><table class="data-tbl"><tr><th>Temp (°C)</th><th>Coating</th><th>ID/IG</th><th>Thickness (μm)</th></tr><tr><td>850</td><td>Partial</td><td>0.89</td><td>0.3–0.8</td></tr><tr><td>900</td><td>Moderate</td><td>0.72</td><td>0.6–1.2</td></tr><tr><td>950</td><td>Good</td><td>0.55</td><td>1.0–1.5</td></tr><tr style="background:#f0faf0"><td><b>970</b></td><td><b>Excellent</b></td><td><b>0.42</b></td><td><b>1.65</b></td></tr><tr><td>1000</td><td>Good</td><td>0.38</td><td>1.8–2.2</td></tr></table></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\'5.1 APCVD Results\')">+ Add Analysis</button></div>`},
+  {section:'Results',title:'2. Corrosion Results',content:`<div class="card"><h3>Corrosion Test</h3><table class="data-tbl"><tr><th>Sample</th><th>icorr (μA/cm²)</th><th>Ecorr (V)</th><th>Rct (Ω cm²)</th></tr><tr><td>Bare Ni</td><td>2.10</td><td>−0.32</td><td>1240</td></tr><tr style="background:#f0faf0"><td><b>Graphite</b></td><td><b>0.88</b></td><td><b>−0.18</b></td><td><b>2950</b></td></tr></table></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\'5.2 Corrosion Results\')">+ Add Analysis</button></div>`},
+  {section:'Results',title:'3. Assembly Results',content:`<div class="card"><h3>Assembly & Contact Resistance</h3><table class="data-tbl"><tr><th>Metric</th><th>Bare Ni</th><th>Graphite/Ni</th></tr><tr><td>Contact Resistance (mΩ cm²)</td><td>8.5</td><td>12.0</td></tr><tr><td>Leak Rate (mL/min)</td><td><0.1</td><td><0.1</td></tr><tr><td>OCV (V)</td><td>0.91</td><td>0.93</td></tr></table></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\'5.3 Assembly Results\')">+ Add Analysis</button></div>`},
+  {section:'Results',title:'4. Performance Results',content:`<div class="card"><h3>Polarization I-V</h3><table class="data-tbl"><tr><th>Temp</th><th>Sample</th><th>OCV (V)</th><th>i@0.6V (mA/cm²)</th><th>Peak Power (mW/cm²)</th></tr><tr><td>160°C</td><td>Bare</td><td>0.92</td><td>380</td><td>228</td></tr><tr><td>160°C</td><td>Graphite</td><td>0.94</td><td>498</td><td>299</td></tr><tr><td>170°C</td><td>Bare</td><td>0.91</td><td>470</td><td>282</td></tr><tr><td>170°C</td><td>Graphite</td><td>0.93</td><td>625</td><td>375</td></tr><tr style="background:#f0faf0"><td><b>180°C</b></td><td><b>Graphite</b></td><td><b>0.93</b></td><td><b>763</b></td><td><b>458</b></td></tr></table></div><div class="card"><h3>EIS Analysis</h3><table class="data-tbl"><tr><th>Sample</th><th>Rohm</th><th>Rct</th><th>Rmt</th></tr><tr><td>Graphite 0h</td><td>72</td><td>165</td><td>78</td></tr><tr><td>Graphite 200h</td><td>88</td><td>240</td><td>112</td></tr></table></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\'5.4 Performance Results\')">+ Add Analysis</button></div>`},
+  {section:'Results',title:'5. Durability Results',content:`<div class="card"><h3>200h Durability</h3><table class="data-tbl"><tr><th>Metric</th><th>Bare Ni</th><th>Graphite</th></tr><tr><td>Voltage decay</td><td>0.48 mV/h</td><td>0.25 mV/h</td></tr><tr><td>OCV drop</td><td>−45 mV</td><td>−18 mV</td></tr></table></div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\'5.5 Durability Results\')">+ Add Analysis</button></div>`},
+  {section:'Resources',title:'6.1 SEM-EDS',content:`<div class="card"><h3>Instrument: SEM-EDS</h3><table class="data-tbl"><tr><th>Property</th><th>Detail</th></tr><tr><td>Model</td><td>JEOL JSM-7800F</td></tr><tr><td>Resolution</td><td>1.0 nm @ 15 kV</td></tr><tr><td>EDS detector</td><td>Oxford X-Max 80</td></tr><tr><td>Usage</td><td>Surface morphology, coating thickness, elemental mapping</td></tr></table></div>`},
+  {section:'Resources',title:'6.2 Raman Spectrometer',content:`<div class="card"><h3>Instrument: Raman Spectrometer</h3><table class="data-tbl"><tr><th>Property</th><th>Detail</th></tr><tr><td>Model</td><td>Horiba LabRAM HR</td></tr><tr><td>Laser</td><td>532 nm, 1 mW</td></tr><tr><td>Grating</td><td>1800 lines/mm</td></tr><tr><td>Usage</td><td>ID/IG ratio, carbon crystallinity, defect analysis</td></tr></table></div>`},
+  {section:'Output',title:'7.1 IJHE 2024 Paper',content:`<div class="card"><h3>Publication: Int. J. Hydrogen Energy 2024</h3><p style="font-size:10px;line-height:1.6"><b>Title:</b> Graphite-coated Ni foam bipolar plates for HT-PEMFC: APCVD optimization and durability<br><b>Authors:</b> [Authors]<br><b>DOI:</b> [DOI]<br><b>Key findings:</b> 970°C optimal CVD temperature (ID/IG=0.42). −58% icorr vs bare Ni. 763 mA/cm² @ 0.6V, 180°C. −48% voltage decay rate over 200h.</p></div>`},
+];
+
+const FIXED_PAGES={
+  dashboard:{title:'📊 Dashboard',content:`<div class="card"><h3>Research Dashboard</h3><div class="card-grid cols3"><div style="border:1px solid var(--bdr);padding:14px;border-radius:4px"><b style="font-size:22px;color:var(--acc)" id="dbExpCount">—</b><br><span style="font-size:10px;color:var(--muted)">Experiments</span></div><div style="border:1px solid var(--bdr);padding:14px;border-radius:4px"><b style="font-size:22px;color:var(--grn)" id="dbKPI1">—</b><br><span style="font-size:10px;color:var(--muted)">Analyses</span></div><div style="border:1px solid var(--bdr);padding:14px;border-radius:4px"><b style="font-size:22px;color:var(--warn)" id="dbKPI2">—</b><br><span style="font-size:10px;color:var(--muted)">API Status</span></div></div></div><div class="card"><h3>Quick Start</h3><button class="btn grn" onclick="createDemoProject()">🧪 Create AEMWE-NiMo-MW Demo</button><span id="demoStatus" style="font-size:9px;color:var(--muted);margin-left:8px"></span></div><div class="card"><h3>Recent</h3><div id="recentSummary" style="font-size:10px;color:var(--muted)">Loading...</div></div>`,onShow:refreshDashboard},
+  'ai-chat':{title:'🤖 AI Chat',content:`<div class="card" style="display:flex;flex-direction:column"><h3>AI Assistant (DeepSeek)</h3><div class="chat-msgs" id="chatMsgs" style="flex:1"><div class="chat-msg agent">Hello! I can process CSV data through skills and analyze your experimental results. Upload data via any Results section → + Add Analysis.</div></div><div class="chat-input-row"><input type="text" id="chatInput" placeholder="Ask..." onkeydown="if(event.key==='Enter')sendChat()"><button onclick="sendChat()">Send</button></div></div>`},
+  'api-settings':{title:'🔑 API',content:`<div class="card"><h3>API Settings</h3><div class="card-grid cols2"><div><label>Provider</label><select id="apiProvider" onchange="updateApiDefaults()"><option value="deepseek">DeepSeek</option><option value="openai">OpenAI</option></select></div><div><label>Model</label><select id="apiModel"><option value="deepseek-chat">deepseek-chat</option><option value="deepseek-reasoner">deepseek-reasoner</option></select></div></div><label>Endpoint</label><input type="text" id="apiEndpoint" value="https://api.deepseek.com/v1/chat/completions"><label>API Key</label><input type="password" id="apiKey" placeholder="sk-..."><div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim" onclick="saveApiSettings()">💾 Save</button><button class="btn grn" onclick="testApiConnection()">🔌 Test</button></div><div id="apiTestResult" style="font-size:10px;margin-top:8px"></div></div><div class="card"><h3>System Prompt</h3><textarea id="systemPrompt" rows="4">You are Virgo, an AI research assistant for electrochemistry and materials science. Be concise and scientific.</textarea><button class="btn prim" onclick="saveApiSettings()">💾 Save</button></div>`,onShow:loadApiSettings},
+  'db-manage':{title:'🗄 Data',content:`<div class="card"><h3>Database</h3><div class="card-grid cols2" style="font-size:10px"><div><b>Experiments:</b> <span id="dbStatsExp">—</span><br><b>Analyses:</b> <span id="dbStatsAnalyses">—</span></div><div><b>Pages:</b> <span id="dbStatsPages">—</span><br><b>Size:</b> <span id="dbStatsSize">—</span></div></div><div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="exportAllJSON()">📥 Export</button><button class="btn" onclick="importJSON()">📤 Import</button><button class="btn red" onclick="clearDatabase()">⚠️ Clear</button></div><input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)"></div>`,onShow:refreshDBStats},
+};
+
+// ═══════════════════════════════════════
+// SEED ALL
+// ═══════════════════════════════════════
+async function seedAll(){
+  const pages=await dbGetAll('pages'),skills=await dbGetAll('skills');
+
+  if(pages.length===0)for(const p of SEED_PAGES)await dbPut('pages',{section:p.section,title:p.title,content:p.content,projectId:defProj||undefined,createdAt:new Date().toISOString()});
+  if(skills.length===0)for(const s of SEED_SKILLS)await dbPut('skills',{name:s.name,category:s.category,desc:s.desc,keyParams:s.keyParams,chartType:s.chartType,chartTemplate:s.chartTemplate,createdAt:new Date().toISOString()});
+  // Migration: add chart pages if missing
+  if(pages.length>0&&!pages.some(p=>p.section==='Charts')){
+    const chartPages=[{section:'Charts',title:'📈 CVD Raman',content:`<div class="card"><h3>CVD Raman ID/IG</h3><canvas id="chart_cvd_raman"></canvas></div><'+'script class="chart-init">new Chart(document.getElementById("chart_cvd_raman"),{type:"bar",data:{labels:["850","900","950","970","1000","1050"],datasets:[{data:[0.89,0.72,0.55,0.42,0.38,0.35],backgroundColor:"#2c5f8a"}]},options:{plugins:{legend:{display:false}},scales:{y:{min:0.2,max:1}}}}<\/script>`}];
+    for(const p of chartPages)await dbPut('pages',{section:p.section,title:p.title,content:p.content,createdAt:new Date().toISOString()});
+  }
+  // (step page migration now handled by force-reseed below)
+  // Migration: restructure old pages to new hierarchy
+  var allP=await dbGetAll('pages');
+  for(const p of allP){
+    var changed=false;
+    // Rename section: Project -> Purpose or Goals
+    if(p.section==='Project'){
+      if(p.title==='1. Purpose'){p.section='Purpose';changed=true}
+      else if(p.title==='2. Goals'){p.section='Goals';p.title='3. Goals';changed=true}
+    }
+    // Renumber Experimental: 3.x -> 4.x
+    if(p.section==='Experimental'){
+      if(p.title==='3. Flowchart'){p.title='4. Flowchart';changed=true}
+      else{var m3=p.title.match(/^3\.(\d+)\s*(.*)/);if(m3){p.title='4.'+m3[1]+(m3[2]?' '+m3[2]:'');changed=true}}
+    }
+    // Renumber Results: 4.x -> 5.x
+    if(p.section==='Results'){
+      if(p.title==='4.1 CVD Optimization'){p.title='5.1 APCVD Results';changed=true}
+      else if(p.title==='4.2 Corrosion Results'){p.title='5.2 Corrosion Results';changed=true}
+      else if(p.title==='4.3 Polarization'){p.title='5.4 Performance Results';changed=true}
+      else if(p.title==='4.4 EIS'){p.title='5.4 Performance Results';changed=true}
+      else if(p.title==='4.5 Durability'){p.title='5.5 Durability Results';changed=true}
+      else{var m4=p.title.match(/^4\.(\d+)\s*(.*)/);if(m4){p.title=m4[1]+'.'+(m4[2]?m4[2]:'');changed=true}}
+    }
+    if(changed)await dbPut('pages',p);
+  }
+  // Migration: project system
+  const projects=await dbGetAll('projects');
+  var defProj=null;
+  if(projects.length===0){
+    defProj=await dbPut('projects',{name:'NiF-Graphite-001',createdAt:new Date().toISOString()});
+  }else{defProj=projects[0].id}
+  // Assign projectId to orphaned pages
+  var allP=await dbGetAll('pages');
+  for(const p of allP){if(!p.projectId){p.projectId=defProj;await dbPut('pages',p)}}
+  // Assign projectId to orphaned analyses
+  const allA=await dbGetAll('analyses');
+  for(const a of allA){if(!a.projectId){a.projectId=defProj;await dbPut('analyses',a)}}
+  // Set active project if not set
+  if(!(await dbGet('settings','activeProjectId')))
+    await dbPut('settings',{key:'activeProjectId',value:defProj});
+  // Add missing Literature/Resources/Output seed pages
+  var seedExtra=SEED_PAGES.filter(function(p){
+    return ['Literature','Resources','Output'].indexOf(p.section)>=0;
+  });
+  var cp=await dbGetAll('pages');
+  for(var sp of seedExtra){
+    if(!cp.some(function(p){return p.section===sp.section&&p.title===sp.title}))
+      await dbPut('pages',{section:sp.section,title:sp.title,content:sp.content,projectId:defProj,createdAt:new Date().toISOString()});
+  }
+  // One-time migration flag — prevents destructive cleanup on every load
+  // New projects created by the user are NEVER touched by migration.
+  var migrationRan=await dbGet('settings','migration_v10_ran');
+  if(!migrationRan){
+    // Cleanup: delete stale pages from old sections (defProj only)
+    const STALE_SECTIONS=['Project','Project+','Settings','Settings+','Templates','Charts','Charts+'];
+    const STALE_TITLES=['📈 CVD Raman','1.1 Literature','4. Flowchart'];
+    var allP2=await dbGetAll('pages');
+    for(var p of allP2){
+      if(p.projectId&&p.projectId!==defProj)continue;
+      var del=false;
+      if(STALE_SECTIONS.indexOf(p.section)>=0)del=true;
+      if(STALE_TITLES.indexOf(p.title)>=0)del=true;
+      if(p.section&&p.section.indexOf('+')>=0&&STALE_SECTIONS.indexOf(p.section)<0)del=true;
+      if(del)await dbDelete('pages',p.id);
+    }
+    // Deduplicate pages for defProj only (keep first by id for each section+title)
+    var allP3=await dbGetAll('pages');
+    var seen={};
+    for(var p of allP3){
+      if(p.projectId&&p.projectId!==defProj)continue;
+      var key=p.section+'||'+p.title;
+      if(seen[key]){await dbDelete('pages',p.id);}
+      else{seen[key]=true;}
+    }
+    // Step 2: Renumber Experimental pages (consolidate to 1., 2., 3. ...)
+    allP3=await dbGetAll('pages');
+    var expPages=allP3.filter(function(p){return p.section==='Experimental'&&p.title.match(/^\d+\./)&&(!p.projectId||p.projectId===defProj);});
+    expPages.sort(function(a,b){return (a.id||0)-(b.id||0);});
+    for(var i=0;i<expPages.length;i++){
+      var p=expPages[i];
+      var base=p.title.replace(/^\d+\.\s*/,'');
+      var newTitle=(i+1)+'. '+base;
+      if(p.title!==newTitle){p.title=newTitle;await dbPut('pages',p);}
+    }
+    // Step 3: Renumber old Results pages with "5.x" prefix (defProj only)
+    allP3=await dbGetAll('pages');
+    for(var p of allP3){
+      if(p.section==='Results'&&(!p.projectId||p.projectId===defProj)){
+        var m5=p.title.match(/^5\.(\d+)\s+(.*)/);
+        if(m5){p.title=m5[1]+'. '+m5[2];await dbPut('pages',p);}
+      }
+    }
+    // Step 4: Seed missing Experimental step pages from SEED_PAGES (defProj only)
+    const stepsSeed=SEED_PAGES.filter(function(p){return p.section==='Experimental'&&p.title.match(/^\d+\./);});
+    allP3=await dbGetAll('pages');
+    for(var sp of stepsSeed){
+      if(!allP3.some(function(p){return p.section==='Experimental'&&p.title===sp.title&&(!p.projectId||p.projectId===defProj);}))
+        await dbPut('pages',{section:sp.section,title:sp.title,content:sp.content,projectId:defProj,createdAt:new Date().toISOString()});
+    }
+    // Step 5: Sync Results pages for each Experimental step (defProj only)
+    allP3=await dbGetAll('pages');
+    var expSteps=allP3.filter(function(p){return p.section==='Experimental'&&(!p.projectId||p.projectId===defProj);});
+    expSteps.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+    for(var p of expSteps){
+      var m=p.title.match(/^(\d+)\.\s*(.*)/);
+      if(m)await syncResultsForStep(parseInt(m[1]),p.title,defProj);
+    }
+    // Rebuild flow order from scratch to avoid stale ids
+    var newOrder=expSteps.map(function(p){return p.id;});
+    await dbPut('settings',{key:'flowchart_order_'+defProj,value:newOrder});
+    // Mark migration as done — NEVER run destructive steps again
+    await dbPut('settings',{key:'migration_v10_ran',value:true});
+  }
+  // v11: Fix corrupted Experimental pages caused by parseBlocks walking block HTML
+  var migrationV11=await dbGet('settings','migration_v11_comic_fix');
+  if(!migrationV11){
+    await dbPut('settings',{key:'migration_v11_comic_fix',value:true});
+    var allP=await dbGetAll('pages');
+    var stepsSeed=SEED_PAGES.filter(function(p){return p.section==='Experimental'&&p.title.match(/^\d+\./)});
+    var defProjId=(await dbGet('settings','activeProjectId'))||{};
+    defProjId=defProjId.value;
+    for(var p of allP){
+      if(p.section==='Experimental'&&(!p.projectId||p.projectId==defProjId)){
+        var seed=stepsSeed.find(function(s){return s.title===p.title;});
+        if(seed){p.content=seed.content;await dbPut('pages',p);}
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+var currentPage='dashboard',currentSectionForAnalysis='',activeProjectId=null,activeProjectName='';
+
+async function loadActiveProject(){
+  try{
+    const s=await dbGet('settings','activeProjectId');
+    if(s&&s.value!=null){
+      activeProjectId=s.value;
+      const p=await dbGet('projects',activeProjectId);
+      if(p){activeProjectName=p.name||''}
+      else{console.warn('loadActiveProject: project '+activeProjectId+' not found, will fallback')}
+    }
+  }catch(e){console.error('loadActiveProject failed',e)}
+  // Fallback: if no valid active project, use first available
+  if(!activeProjectId||!activeProjectName){
+    const projects=await dbGetAll('projects');
+    if(projects.length>0){
+      activeProjectId=projects[0].id;
+      activeProjectName=projects[0].name||'';
+      await dbPut('settings',{key:'activeProjectId',value:activeProjectId});
+    }
+  }
+}
+function getActiveProjectId(){return activeProjectId}
+async function switchProject(pid){
+  await dbPut('settings',{key:'activeProjectId',value:pid});
+  activeProjectId=pid;const p=await dbGet('projects',pid);activeProjectName=p?p.name:'';
+  goPage('dashboard');await buildSidebar();
+}
+async function createProject(){
+  var name=prompt('New project name:');
+  if(!name||!name.trim())return;
+  var pid=await dbPut('projects',{name:name.trim(),createdAt:new Date().toISOString()});
+  // Seed template pages for new project
+  const TMPL_PAGES=[
+    {section:'Purpose',title:'1. Purpose',content:'<div class="card"><h3>Project Purpose</h3><p style="font-size:11px;line-height:1.8">Describe the research objective and motivation here.</p></div>'},
+    {section:'Literature',title:'2.1 Literature',content:'<div class="card"><h3>2.1 Literature</h3><p style="font-size:10px;line-height:1.6">Add literature references and notes here. Use + to add more sub-pages.</p></div>'},
+    {section:'Goals',title:'3. Goals',content:'<div class="card"><h3>Project Goals</h3><table class="data-tbl"><tr><th>#</th><th>Goal</th><th>Status</th></tr><tr><td>1</td><td>Define goal 1</td><td>⬜ Pending</td></tr></table></div>'},
+    {section:'Experimental',title:'1. Setup',content:'<div class="card"><h3>Step 1 — Setup</h3><div class="comic-grid"><div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body">Add fixed parameters here.</div></div><div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body">Add variable parameters here.</div></div><div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body">Add detection methods here.</div></div><div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body">Add benchmarks here.</div></div></div></div>'},
+    {section:'Results',title:'1. Summary',content:'<div class="card"><h3>Results Summary</h3><p style="font-size:10px;color:var(--muted)">Results will appear here as experimental steps are added.</p></div>'},
+    {section:'Resources',title:'6.1 Resources',content:'<div class="card"><h3>Resources</h3><table class="data-tbl"><tr><th>Property</th><th>Detail</th></tr><tr><td>Instrument</td><td>[Add instrument details]</td></tr></table></div>'},
+    {section:'Output',title:'7.1 Deliverable',content:'<div class="card"><h3>Deliverable</h3><p style="font-size:10px;color:var(--muted)">Papers, patents, reports, presentations. Use + to add sub-pages.</p></div>'},
+  ];
+  for(const tp of TMPL_PAGES){
+    await dbPut('pages',{section:tp.section,title:tp.title,content:tp.content,projectId:pid,createdAt:new Date().toISOString()});
+  }
+  await switchProject(pid);toast('Created: '+name.trim());
+}
+async function deleteProject(){
+  var pid=activeProjectId;
+  if(!pid)return;
+  var projs=await dbGetAll('projects');
+  if(projs.length<=1){toast('Cannot delete last project','var(--red)');return}
+  var name=activeProjectName||'Project #'+pid;
+  if(!confirm('Delete project "'+name+'" and ALL its pages/analyses?'))return;
+  // Delete pages & analyses for this project
+  var allPages=await dbGetAll('pages'),allA=await dbGetAll('analyses');
+  for(var p of allPages){if(p.projectId===pid)await dbDelete('pages',p.id)}
+  for(var a of allA){if(a.projectId===pid)await dbDelete('analyses',a.id)}
+  await dbDelete('projects',pid);
+  // Switch to first remaining project
+  projs=await dbGetAll('projects');
+  if(projs.length>0)await switchProject(projs[0].id);
+  toast('Deleted: '+name);
+}
+
+async function buildSidebar(){
+  var dbPages=[],analyses=[],projects=[];
+  try{dbPages=await dbGetAll('pages')||[]}catch(e){console.error('buildSidebar: pages load failed',e)}
+  try{analyses=await dbGetAll('analyses')||[]}catch(e){}
+  try{projects=await dbGetAll('projects')||[]}catch(e){}
+  // Fallback: if activeProjectId is null/undefined, use first project
+  var pid=activeProjectId;
+  if((pid===null||pid===undefined)&&projects.length>0){pid=projects[0].id;activeProjectId=pid;}
+  // Use == (not ===) for projectId comparison — IndexedDB auto-increment keys can be
+  // number or string depending on browser; also fall back to showing all pages if
+  // the filter returns nothing (likely a stale or corrupted projectId)
+  const projPages=dbPages.filter(function(p){return p.projectId==null||p.projectId==pid});
+  if(projPages.length===0&&pid&&dbPages.length>0){
+    console.warn('buildSidebar: no pages for project '+pid+', falling back to all '+dbPages.length+' pages');
+    for(var fb=0;fb<dbPages.length;fb++)projPages.push(dbPages[fb]);
+  }
+  const projAnalyses=analyses.filter(function(a){return a.projectId==null||a.projectId==pid});
+  const sections={};
+  for(const p of projPages){if(!sections[p.section])sections[p.section]=[];sections[p.section].push(p);}
+  const SEC_NUM={Purpose:'1',Literature:'2',Goals:'3',Experimental:'4',Results:'5',Resources:'6',Output:'7'};
+  const SEC_ORDER=['Purpose','Literature','Goals','Experimental','Results','Resources','Output'];
+  var h='';
+  // Global: AI + Skills + Settings
+  h+=`<div class="nav-section" style="margin-top:0"><span>AI</span></div>`;
+  h+=`<div class="nav-item${currentPage==='ai-chat'?' active':''}" onclick="goPage('ai-chat')">🤖 AI Chat</div>`;
+  var skills=[];
+  try{skills=await dbGetAll('skills')||[]}catch(e){}
+  if(skills.length>0){
+    for(const s of skills){
+      const sid='s_'+s.id;h+=`<div class="nav-item${currentPage===sid?' active':''}" onclick="goPage('${sid}')" style="font-size:9px;color:var(--muted)">📄 ${esc(s.name)}</div>`;
+    }
+  }
+  h+=`<div class="nav-section"><span>Settings</span></div>`;
+  h+=`<div class="nav-item${currentPage==='api-settings'?' active':''}" onclick="goPage('api-settings')">🔑 API</div>`;
+  h+=`<div class="nav-item${currentPage==='db-manage'?' active':''}" onclick="goPage('db-manage')">🗄 Data</div>`;
+  h+='<div style="margin:6px 12px;border-top:1px solid var(--bdr)"></div>';
+  // Project selector
+  h+='<div style="padding:6px 12px">';
+  h+='<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><span style="font-size:8px;color:var(--muted)">Project</span><button class="btn sm" onclick="createProject()" style="margin-left:auto;padding:1px 6px;font-size:14px;line-height:1">➕</button></div>';
+  h+='<select onchange="switchProject(parseInt(this.value))" style="width:100%;font-size:12px;font-weight:700;padding:4px 6px;border:1px solid var(--bdr);border-radius:3px;background:var(--card);color:var(--txt)">';
+  for(const pr of projects){h+='<option value="'+pr.id+'"'+(pr.id===pid?' selected':'')+'>📁 '+esc(pr.name)+'</option>'}
+  h+='</select>';
+  if(projects.length>1)h+='<button class="btn red sm" onclick="deleteProject()" style="font-size:7px;padding:1px 4px;margin-top:4px">🗑 Del</button>';
+  h+='</div>';
+  h+=`<div class="nav-item${currentPage==='dashboard'?' active':''}" onclick="goPage('dashboard')">📊 Dashboard</div>`;
+  // Sections in order
+  for(const sec of SEC_ORDER){
+    const pgs=sections[sec];
+    if(!pgs||pgs.length===0)continue;
+    var label=SEC_NUM[sec]?SEC_NUM[sec]+'. '+sec:sec;
+    if(sec==='Experimental'){
+      h+=`<div class="nav-section"><span onclick="goPage('sec_Experimental')" style="cursor:pointer;color:${currentPage==='sec_Experimental'?'var(--acc)':'var(--muted)'}">${esc(label)}</span><span class="add-page-btn" onclick="openEditor('','Experimental')">+</span></div>`;
+    }else if(sec==='Goals'||sec==='Purpose'){
+      var goalPage=pgs[0];
+      var gid=goalPage?'p_'+goalPage.id:'';
+      h+=`<div class="nav-section"><span onclick="goPage('${gid}')" style="cursor:pointer;color:${currentPage===gid?'var(--acc)':'var(--muted)'}">${esc(label)}</span></div>`;
+      pgs.length=0;
+    }else if(sec==='Literature'){
+      h+=`<div class="nav-section"><span onclick="goPage('sec_Literature')" style="cursor:pointer;color:${currentPage==='sec_Literature'?'var(--acc)':'var(--muted)'}">${esc(label)}</span></div>`;
+    }else if(sec==='Results'){
+      h+=`<div class="nav-section"><span>${esc(label)}</span></div>`;
+      pgs.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+      for(const p of pgs){
+        const pid2='p_'+p.id;
+        h+=`<div class="nav-item${currentPage===pid2?' active':''}" onclick="goPage('${pid2}')">${esc(p.title)}<span class="nav-actions"><button onclick="event.stopPropagation();openEditor(${p.id})">✎</button></span></div>`;
+        // Sub-items: analyses for this step
+        var stepTitle=(p.title||'').replace(/\s*Results\s*$/,'');
+        for(const a of projAnalyses){
+          var aSec=(a.section||'').replace(/\s*Results\s*$/,'');
+          if(aSec===stepTitle||aSec===p.title||a.section===p.title||(stepTitle&&a.section&&a.section.indexOf(stepTitle)===0)){
+            var aid2='a_'+a.id;
+            h+=`<div class="nav-item${currentPage===aid2?' active':''}" onclick="goPage('${aid2}')" style="padding-left:34px;font-size:9px;color:var(--muted)">🔬 ${esc(a.title||'Analysis')}</div>`;
+          }
+        }
+      }
+      pgs.length=0;
+    }else{
+      h+=`<div class="nav-section"><span>${esc(label)}</span><span class="add-page-btn" onclick="openEditor('','${escAttr(sec)}')">+</span></div>`;
+    }
+    pgs.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+    for(const p of pgs){
+      const pid2='p_'+p.id;
+      var edAct=(sec==='Experimental'||sec==='Results')?`openEditor(${p.id})`:`goPage('${pid2}')`;
+      h+=`<div class="nav-item${currentPage===pid2?' active':''}" onclick="goPage('${pid2}')">${esc(p.title)}<span class="nav-actions"><button onclick="event.stopPropagation();${edAct}">✎</button></span></div>`;
+    }
+  }
+  // Uncategorized sections
+  for(const[sec,pgs]of Object.entries(sections)){
+    if(SEC_ORDER.indexOf(sec)>=0)continue;
+    h+=`<div class="nav-section"><span>${esc(sec)}</span><span class="add-page-btn" onclick="openEditor('','${escAttr(sec)}')">+</span></div>`;
+    for(const p of pgs){
+      const pid2='p_'+p.id;h+=`<div class="nav-item${currentPage===pid2?' active':''}" onclick="goPage('${pid2}')">${esc(p.title)}<span class="nav-actions"><button onclick="event.stopPropagation();goPage('${pid2}')">✎</button></span></div>`;
+    }
+  }
+  document.getElementById('sidebarNav').innerHTML=h;
+}
+
+function esc(s){return(typeof s==='string'&&s)?s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
+function escAttr(s){return(typeof s==='string'&&s)?s.replace(/'/g,"\\'").replace(/"/g,'&quot;'):''}
+
+// ═══════════════════════════════════════
+// NOTION-STYLE BLOCK ENGINE
+// ═══════════════════════════════════════
+var currentBlockPageId=null,blockSaveTimer=null;
+
+function parseBlocks(html){
+  if(!html||html.trim()===''||html==='<i>Click to edit…</i>')return [{type:'p',content:''}];
+  var div=document.createElement('div');div.innerHTML=html;
+  var blocks=[];
+  function walk(node){
+    if(node.nodeType===3){var t=node.textContent.trim();if(t)blocks.push({type:'p',content:t});return;}
+    if(node.nodeType!==1)return;
+    var tag=node.tagName.toLowerCase();
+    if(tag==='h1'||tag==='h2'||tag==='h3'||tag==='h4'){blocks.push({type:tag,content:node.innerHTML});return;}
+    if(tag==='p'){blocks.push({type:'p',content:node.innerHTML});return;}
+    if(tag==='ul'){Array.from(node.children).forEach(function(li){blocks.push({type:'bulleted',content:li.innerHTML});});return;}
+    if(tag==='ol'){Array.from(node.children).forEach(function(li){blocks.push({type:'numbered',content:li.innerHTML});});return;}
+    if(tag==='pre'){blocks.push({type:'code',content:node.textContent});return;}
+    if(tag==='blockquote'){blocks.push({type:'quote',content:node.innerHTML});return;}
+    if(tag==='hr'){blocks.push({type:'divider',content:''});return;}
+    if(tag==='table'){blocks.push({type:'table',content:node.outerHTML});return;}
+    if(tag==='div'||tag==='span'||tag==='section'||tag==='article'){
+      // Check if this is a saved column layout
+      var style=node.getAttribute('style')||'';
+      if(style.indexOf('display:flex')>=0||style.indexOf('display: flex')>=0){
+        Array.from(node.childNodes).forEach(walk);
+      }else{
+        Array.from(node.childNodes).forEach(walk);
+      }
+      return;
+    }
+    blocks.push({type:'p',content:node.innerHTML||node.textContent});
+  }
+  Array.from(div.childNodes).forEach(walk);
+  if(blocks.length===0)blocks.push({type:'p',content:''});
+  return blocks;
+}
+
+// Extract block data from already-rendered .notion-block HTML
+// (avoids parseBlocks swallowing UI handles as content blocks)
+function extractComicBlocks(containerEl){
+  var blocks=[];
+  var bcs=containerEl.querySelectorAll('.block-content');
+  bcs.forEach(function(bc){
+    var nb=bc.closest('.notion-block');
+    var type=nb?nb.dataset.type:'p';
+    blocks.push({type:type,content:bc.innerHTML});
+  });
+  if(blocks.length===0)blocks.push({type:'p',content:''});
+  return blocks;
+}
+
+function renderBlockHTML(b,idx){
+  var inner=b.content||'';
+  return '<div class="notion-block" data-idx="'+idx+'" data-type="'+b.type+'" draggable="true"><div class="block-handle" title="Drag to reorder">⋮⋮</div><div class="block-plus" title="Add block below" onclick="addBlockAfter('+idx+')">+</div><div class="block-content" contenteditable="true">'+inner+'</div></div>';
+}
+
+function renderAllBlocks(container,blocks){
+  container.innerHTML=blocks.map(function(b,i){return renderBlockHTML(b,i);}).join('');
+  refreshBlockBindings(container);
+}
+
+function serializeBlocks(container){
+  var html='';
+  var children=container.children;
+  for(var i=0;i<children.length;i++){
+    var child=children[i];
+    if(child.classList.contains('block-row')){
+      // Serialize column blocks
+      var cols=child.querySelectorAll(':scope>.notion-block');
+      var colHtml='';
+      for(var j=0;j<cols.length;j++){
+        var nb=cols[j];
+        var type=nb.dataset.type,content=nb.querySelector('.block-content').innerHTML;
+        if(type==='h1')colHtml+='<h2>'+content+'</h2>';
+        else if(type==='h2')colHtml+='<h3>'+content+'</h3>';
+        else if(type==='h3'||type==='h4')colHtml+='<h4>'+content+'</h4>';
+        else if(type==='bulleted')colHtml+='<ul><li>'+content+'</li></ul>';
+        else if(type==='numbered')colHtml+='<ol><li>'+content+'</li></ol>';
+        else if(type==='code')colHtml+='<pre>'+content+'</pre>';
+        else if(type==='quote')colHtml+='<blockquote>'+content+'</blockquote>';
+        else if(type==='divider')colHtml+='<hr>';
+        else if(type==='table')colHtml+=content;
+        else colHtml+='<p>'+content+'</p>';
+      }
+      html+='<div style="display:flex;gap:12px">'+colHtml+'</div>';
+    }else if(child.classList.contains('notion-block')){
+      var type=child.dataset.type,content=child.querySelector('.block-content').innerHTML;
+      if(type==='h1')html+='<h2>'+content+'</h2>';
+      else if(type==='h2')html+='<h3>'+content+'</h3>';
+      else if(type==='h3'||type==='h4')html+='<h4>'+content+'</h4>';
+      else if(type==='bulleted')html+='<ul><li>'+content+'</li></ul>';
+      else if(type==='numbered')html+='<ol><li>'+content+'</li></ol>';
+      else if(type==='code')html+='<pre>'+content+'</pre>';
+      else if(type==='quote')html+='<blockquote>'+content+'</blockquote>';
+      else if(type==='divider')html+='<hr>';
+      else if(type==='table')html+=content;
+      else html+='<p>'+content+'</p>';
+    }
+  }
+  return html;
+}
+
+function blockChanged(){
+  if(!currentBlockPageId)return;
+  clearTimeout(blockSaveTimer);
+  var si=document.getElementById('saveIndicator');
+  if(si){si.style.display='block';si.textContent='Saving…';}
+  blockSaveTimer=setTimeout(async function(){
+    var container=document.querySelector('.notion-blocks');
+    if(!container)return;
+    var html=serializeBlocks(container);
+    var pp=await dbGet('pages',currentBlockPageId);
+    if(pp){pp.content=html;pp.updatedAt=new Date().toISOString();await dbPut('pages',pp);}
+    if(si){si.textContent='Saved';setTimeout(function(){si.style.display='none'},1500);}
+  },1200);
+}
+
+function addBlockAfter(idx,type,content){
+  var container=document.querySelector('.notion-blocks');
+  if(!container)return;
+  type=type||'p';content=content||'';
+  var all=container.querySelectorAll('.notion-block');
+  var html=renderBlockHTML({type:type,content:content},idx+1);
+  if(idx>=0&&all[idx]){
+    // Insert after the row if target is inside a block-row
+    var targetBlock=all[idx];
+    var row=targetBlock.closest('.block-row');
+    if(row)row.insertAdjacentHTML('afterend',html);
+    else targetBlock.insertAdjacentHTML('afterend',html);
+  }else{
+    container.insertAdjacentHTML('beforeend',html);
+  }
+  refreshBlockBindings(container);
+  reindexBlocks(container);
+  var all2=container.querySelectorAll('.block-content');
+  var target=idx+1<all2.length?all2[idx+1]:all2[all2.length-1];
+  if(target){target.focus();var r=document.createRange();r.selectNodeContents(target);r.collapse(false);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+  blockChanged();
+}
+
+function refreshBlockBindings(container){
+  container.querySelectorAll('.block-content').forEach(function(bc){
+    bc.onkeydown=blockKeydown;
+    bc.oninput=blockChanged;
+  });
+  container.querySelectorAll('.notion-block').forEach(function(nb){
+    nb.ondragstart=blockDragStart;
+    nb.ondragover=blockDragOver;
+    nb.ondrop=blockDrop;
+    nb.ondragend=blockDragEnd;
+  });
+}
+
+function reindexBlocks(container){
+  container.querySelectorAll('.notion-block').forEach(function(nb,i){
+    nb.dataset.idx=i;
+    var plus=nb.querySelector('.block-plus');
+    if(plus)plus.setAttribute('onclick','addBlockAfter('+i+')');
+  });
+}
+
+function blockKeydown(e){
+  var bc=e.target,block=bc.parentElement;
+  var topContainer=block.closest('.notion-blocks');
+  var all=topContainer?topContainer.querySelectorAll('.block-content'):document.querySelectorAll('.block-content');
+  var idx=parseInt(block.dataset.idx);
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();addBlockAfter(idx);
+  }
+  if(e.key==='Backspace'&&bc.textContent===''&&all.length>1){
+    e.preventDefault();
+    var row=block.closest('.block-row');
+    if(row&&row.children.length<=2){
+      // If deleting would leave one block in row, unwrap the row
+      var sibling=row.children[0]===block?row.children[1]:row.children[0];
+      if(sibling){row.parentElement.insertBefore(sibling,row);row.remove();}
+    }else{block.remove();}
+    reindexBlocks(topContainer);blockChanged();
+    if(idx>0)all[idx-1].focus();
+  }
+  if(e.key==='ArrowUp'){
+    var sel=window.getSelection();
+    if(sel.rangeCount&&sel.getRangeAt(0).startOffset===0&&idx>0){e.preventDefault();all[idx-1].focus();}
+  }
+  if(e.key==='ArrowDown'){
+    var sel=window.getSelection();
+    if(sel.rangeCount){var r=sel.getRangeAt(0);if(r.endOffset>=(r.endContainer.textContent||'').length&&idx<all.length-1){e.preventDefault();all[idx+1].focus();}}
+  }
+  if(e.key==='/'&&!slashActive){setTimeout(function(){if(bc.textContent.startsWith('/'))openSlashMenu(bc);},10);}
+}
+
+var draggedBlockIdx=null;
+function blockDragStart(e){draggedBlockIdx=parseInt(e.target.closest('.notion-block').dataset.idx);e.target.closest('.notion-block').classList.add('dragging');e.dataTransfer.effectAllowed='move';}
+function blockDragEnd(e){
+  var nb=e.target.closest('.notion-block');
+  if(!nb)return;
+  // Find all sibling blocks in the same container
+  var container=nb.parentElement;
+  if(container)container.querySelectorAll('.notion-block').forEach(function(b){b.classList.remove('dragging','drag-over','block-drop-left','block-drop-right');});
+}
+var dragOverTarget=null;
+function blockDragOver(e){
+  e.preventDefault();
+  var nb=e.target.closest('.notion-block');
+  if(!nb)return;
+  var container=nb.parentElement;
+  var dragged=container?container.querySelector('.notion-block.dragging'):null;
+  if(!dragged||nb===dragged)return;
+  if(dragOverTarget&&dragOverTarget!==nb){dragOverTarget.classList.remove('drag-over','block-drop-left','block-drop-right');}
+  dragOverTarget=nb;
+  var rect=nb.getBoundingClientRect();
+  var xRel=(e.clientX-rect.left)/rect.width;
+  nb.classList.remove('drag-over','block-drop-left','block-drop-right');
+  if(xRel<0.25)nb.classList.add('block-drop-left');
+  else if(xRel>0.75)nb.classList.add('block-drop-right');
+  else nb.classList.add('drag-over');
+}
+function blockDrop(e){
+  e.preventDefault();
+  var target=e.target.closest('.notion-block');if(!target)return;
+  var container=target.parentElement;if(!container)return;
+  if(dragOverTarget)dragOverTarget.classList.remove('drag-over','block-drop-left','block-drop-right');
+  var dragged=container.querySelector('.notion-block.dragging');
+  if(!dragged||dragged===target)return;
+  var rect=target.getBoundingClientRect();
+  var xRel=(e.clientX-rect.left)/rect.width;
+  if(xRel<0.25||xRel>0.75){
+    var row=document.createElement('div');row.className='block-row';
+    target.parentElement.insertBefore(row,target);
+    if(xRel<0.25){row.appendChild(dragged);row.appendChild(target);}
+    else{row.appendChild(target);row.appendChild(dragged);}
+  }else{
+    if(draggedBlockIdx<parseInt(target.dataset.idx))target.insertAdjacentElement('afterend',dragged);
+    else target.insertAdjacentElement('beforebegin',dragged);
+  }
+  // Try both save mechanisms
+  if(window._comicSaveFn)window._comicSaveFn();
+  if(typeof blockChanged==='function'&&currentBlockPageId)blockChanged();
+  draggedBlockIdx=null;dragOverTarget=null;
+}
+
+function setupBlockEditor(containerEl,html,pageId){
+  currentBlockPageId=pageId;
+  var blocks=parseBlocks(html);
+  renderAllBlocks(containerEl,blocks);
+}
+
+var comicSaveTimer=null;
+function comicChanged(pid){
+  clearTimeout(comicSaveTimer);
+  var si=document.getElementById('saveIndicator');
+  if(si){si.style.display='block';si.textContent='Saving…';}
+  comicSaveTimer=setTimeout(async function(){
+    var cw=document.getElementById('comicWrap');
+    if(!cw)return;
+    var pp=await dbGet('pages',pid);
+    if(pp){pp.content=cw.innerHTML;pp.updatedAt=new Date().toISOString();await dbPut('pages',pp);}
+    if(si){si.textContent='Saved';setTimeout(function(){si.style.display='none'},1500);}
+  },1200);
+}
+
+async function goPage(name){
+  currentPage=name;window._comicSaveFn=null;const c=document.getElementById('pageContainer');
+  if(name==='sec_Experimental'){c.innerHTML='<div class="slide">'+await renderFlowchart()+'</div>'}
+  else if(name==='sec_Literature'){c.innerHTML='<div class="slide"><div class="page active">'+await renderLiteraturePage('ALL')+'</div></div>'}
+  else if(FIXED_PAGES[name]){c.innerHTML=`<div class="slide"><div class="page active">${FIXED_PAGES[name].content}</div></div>`}
+  else if(name.startsWith('p_')){
+    const pid=parseInt(name.slice(2));
+    const p=await dbGet('pages',pid);
+    var extra='';
+    if(p&&p.section==='Literature'){
+      c.innerHTML='<div class="slide"><div class="page active">'+await renderLiteraturePage(p.title)+'</div></div>';
+    }else if(p&&p.section==='Results'){
+      c.innerHTML='<div class="slide">'+await renderResultsPage(p.title)+'</div>';
+    }else if(p&&p.section==='Experimental'){
+      // Keep 2x2 comic grid intact, make each panel editable
+      var content=p.content||'';
+      // Recovery: if content was flattened by block editor, rebuild comic grid
+      if(content.indexOf('comic-grid')===-1){
+        // Extract text from flattened blocks and place in panels
+        var raw=content.replace(/<[^>]+>/g,'\n').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+        var lines=raw.split('\n').filter(function(l){return l.trim();});
+        var panels=['','','',''];
+        for(var li=0;li<Math.min(lines.length,12);li++){
+          panels[Math.floor(li/3)]+=(panels[Math.floor(li/3)]?'<br>':'')+lines[li];
+        }
+        content='<div class="card"><h3>'+(p.title||'Step')+'</h3><div class="comic-grid">'
+          +'<div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body">'+(panels[0]||'<i>Click to edit…</i>')+'</div></div>'
+          +'<div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body">'+(panels[1]||'<i>Click to edit…</i>')+'</div></div>'
+          +'<div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body">'+(panels[2]||'<i>Click to edit…</i>')+'</div></div>'
+          +'<div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body">'+(panels[3]||'<i>Click to edit…</i>')+'</div></div>'
+          +'</div></div>';
+      }
+      c.innerHTML='<div class="slide"><div class="page active"><div class="comic-edit-wrap" id="comicWrap">'+content+'</div><div class="save-indicator" id="saveIndicator" style="display:none">Saved</div></div></div>';
+      // Make each cp-body a self-contained mini Notion block editor
+      var cw=document.getElementById('comicWrap');
+      var comicBlockSaveTimer=null;
+      if(cw){
+        cw.querySelectorAll('.cp-body').forEach(function(cb,i){
+          var innerHTML=cb.innerHTML;
+          var blocks;
+          // If already saved as block HTML, extract content from .block-content
+          // directly to avoid parseBlocks recursively walking UI handles
+          if(innerHTML.indexOf('block-content')!==-1){
+            blocks=extractComicBlocks(cb);
+          }else{
+            blocks=parseBlocks(innerHTML);
+          }
+          // Render blocks without refreshBlockBindings (we'll bind manually)
+          cb.innerHTML=blocks.map(function(b,j){return renderBlockHTML(b,j);}).join('');
+          var container=cb;
+          // Bind handlers for each block-content
+          container.querySelectorAll('.block-content').forEach(function(bc){
+            bindComicBlockHandlers(bc,container);
+          });
+          // Drag handlers
+          container.querySelectorAll('.notion-block').forEach(function(nb){
+            nb.ondragstart=blockDragStart;
+            nb.ondragover=blockDragOver;
+            nb.ondrop=blockDrop;
+            nb.ondragend=blockDragEnd;
+          });
+        });
+      }
+      function reindexPanelBlocks(container){
+        container.querySelectorAll('.notion-block').forEach(function(nb,j){
+          nb.dataset.idx=j;
+        });
+      }
+      function bindComicBlockHandlers(bc,container){
+        // / slash menu + Enter/Backspace/Arrow
+        bc.addEventListener('keydown',function(e){
+          var el=this;
+          if(e.key==='/'&&!slashActive){
+            // Let browser insert '/', then check after brief delay
+            setTimeout(function(){
+              if(el.textContent&&el.textContent.indexOf('/')===0)openSlashMenu(el);
+            },30);
+            return;
+          }
+          var block=el.closest('.notion-block');
+          if(!block)return;
+          var all=container.querySelectorAll('.block-content');
+          var idx=parseInt(block.dataset.idx);
+          if(isNaN(idx))return;
+          if(e.key==='Enter'&&!e.shiftKey){
+            e.preventDefault();
+            block.insertAdjacentHTML('afterend',renderBlockHTML({type:'p',content:''},idx+1));
+            reindexPanelBlocks(container);
+            var newBc=container.querySelectorAll('.block-content')[idx+1];
+            if(newBc){bindComicBlockHandlers(newBc,container);newBc.focus();}
+            scheduleComicSave();
+            return;
+          }
+          if(e.key==='Backspace'&&!el.textContent&&all.length>1){
+            e.preventDefault();block.remove();
+            reindexPanelBlocks(container);scheduleComicSave();
+            var all2=container.querySelectorAll('.block-content');
+            if(idx>0&&all2[idx-1])all2[idx-1].focus();
+            return;
+          }
+          if(e.key==='ArrowUp'){
+            var s=window.getSelection();
+            if(s.rangeCount&&s.getRangeAt(0).startOffset===0&&idx>0){e.preventDefault();all[idx-1].focus();}
+          }
+          if(e.key==='ArrowDown'){
+            var s=window.getSelection();
+            if(s.rangeCount){var r=s.getRangeAt(0);if(r.endOffset>=(r.endContainer.textContent||'').length&&idx<all.length-1){e.preventDefault();all[idx+1].focus();}}
+          }
+        });
+        bc.addEventListener('input',function(){scheduleComicSave();});
+      }
+      function scheduleComicSave(){
+        clearTimeout(comicBlockSaveTimer);
+        var si=document.getElementById('saveIndicator');
+        if(si){si.style.display='block';si.textContent='Saving…';}
+        comicBlockSaveTimer=setTimeout(async function(){
+          var pp=await dbGet('pages',pid);
+          if(pp){pp.content=cw.innerHTML;pp.updatedAt=new Date().toISOString();await dbPut('pages',pp);}
+          if(si){si.textContent='Saved';setTimeout(function(){si.style.display='none'},1500);}
+        },1200);
+      }
+      window._comicSaveFn=scheduleComicSave;
+    }else{
+      // Inline-editable content pages (Purpose, Goals, Resources, Output, etc.)
+      if(p){
+        var isEditable=p.section!=='Literature'&&p.section!=='Results';
+        if(isEditable){
+          c.innerHTML='<div class="slide"><div class="page active">'+(p.section==='Goals'?'<div style="margin-bottom:12px"><button class="btn prim" onclick="aiGeneratePlan('+pid+')">🤖 AI Generate Goals & Plan</button><span id="aiGenStatus" style="font-size:9px;color:var(--muted);margin-left:8px"></span></div>':'')+'<div class="notion-blocks" id="blockContainer"></div><div class="save-indicator" id="saveIndicator" style="display:none">Saved</div></div></div>';
+          setupBlockEditor(document.getElementById('blockContainer'),p.content||'',pid);
+        }else{
+          c.innerHTML=`<div class="slide"><div class="page active"><div class="inline-editor" id="inlineContent">${p.content||'<i>Click to edit…</i>'}</div><div class="save-indicator" id="saveIndicator" style="display:none">Saved</div></div></div>`;
+        }
+      }else{
+        c.innerHTML='<div class="slide"><div class="page active"><i>Not found</i></div></div>';
+      }
+    }
+  }else if(name.startsWith('a_')){
+    const aid=parseInt(name.slice(2));
+    const a=await dbGet('analyses',aid);
+    c.innerHTML=a?'<div class="slide">'+renderAnalysisPage(a)+'</div>':'<div class="slide"><div class="page active"><i>Not found</i></div></div>';
+    // Render chart directly (no eval)
+    setTimeout(function(){renderAnalysisChart(aid)},150);
+    // Bind auto-save for analysis notes
+    var aNotes=document.getElementById('analysisNotes');
+    if(aNotes){
+      var aSaveTimer=null;
+      aNotes.addEventListener('input',function(){
+        var si=document.getElementById('saveIndicator');
+        if(si){si.style.display='block';si.textContent='Saving…';}
+        clearTimeout(aSaveTimer);
+        aSaveTimer=setTimeout(async function(){
+          var aa=await dbGet('analyses',aid);
+          if(aa){aa.notes=aNotes.innerHTML;await dbPut('analyses',aa);}
+          if(si){si.textContent='Saved';setTimeout(function(){si.style.display='none'},1500);}
+        },1200);
+      });
+      initSlashMenu('analysisNotes');
+    }
+  }else if(name.startsWith('s_')){
+    const s=await dbGet('skills',parseInt(name.slice(2)));
+    c.innerHTML=s?'<div class="slide">'+renderSkillPage(s)+'</div>':'<div class="slide"><div class="page active"><i>Template not found</i></div></div>';
+  }else if(name.startsWith('litdetail_')){
+    var litId=parseInt(name.slice(10));
+    c.innerHTML='<div class="slide"><div class="page active">'+await renderLitDetail(litId)+'</div></div>';
+    // Bind auto-save for literature notes
+    var litNotes=document.getElementById('litNotes');
+    if(litNotes){
+      var litSaveTimer=null;
+      litNotes.addEventListener('input',function(){
+        var si=document.getElementById('saveIndicator');
+        if(si){si.style.display='block';si.textContent='Saving…';}
+        clearTimeout(litSaveTimer);
+        litSaveTimer=setTimeout(async function(){
+          var ll=await dbGet('literature',litId);
+          if(ll){ll.notes=litNotes.innerHTML;await dbPut('literature',ll);}
+          if(si){si.textContent='Saved';setTimeout(function(){si.style.display='none'},1500);}
+        },1200);
+      });
+      initSlashMenu('litNotes');
+    }
+  }else{c.innerHTML='<div class="slide"><div class="page active"><i>Not found</i></div></div>'}
+  await buildSidebar();
+  const fp=FIXED_PAGES[name];let title=fp?fp.title:name;
+  if(name==='sec_Literature')title='📚 2. Literature';
+  if(name.startsWith('p_')){const p=await dbGet('pages',parseInt(name.slice(2)));if(p)title=p.title}
+  if(name.startsWith('a_')){const a=await dbGet('analyses',parseInt(name.slice(2)));if(a)title='🔬 '+(a.title||'Analysis')}
+  if(name.startsWith('litdetail_')){const l=await dbGet('literature',parseInt(name.slice(10)));if(l)title='📄 '+l.title}
+  document.getElementById('pageTitle').textContent='Virgo Agent · '+title;
+  document.getElementById('breadcrumb').textContent=title;
+  if(fp&&fp.onShow)fp.onShow();
+}
+
+// ═══════════════════════════════════════
+// ANALYSIS WORKFLOW
+// ═══════════════════════════════════════
+var csvData=null,csvHeaders=null;
+
+async function openAnalysisModal(section){
+  currentSectionForAnalysis=section||'';
+  const sel=document.getElementById('amSkill');
+  const skills=await dbGetAll('skills');
+  sel.innerHTML=skills.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  updateSkillDesc();
+  document.getElementById('amParam').value='';
+  document.getElementById('amFile').value='';
+  document.getElementById('amPreview').textContent='';
+  document.getElementById('amProcessBtn').disabled=true;
+  csvData=null;csvHeaders=null;
+  document.getElementById('amStep1').classList.add('active');
+  document.getElementById('amStep2').classList.remove('active');
+  document.getElementById('analysisModal').classList.add('show');
+}
+
+function closeAnalysisModal(){document.getElementById('analysisModal').classList.remove('show')}
+
+async function updateSkillDesc(){
+  const sid=document.getElementById('amSkill').value;
+  const s=await dbGet('skills',parseInt(sid));
+  document.getElementById('amSkillDesc').textContent=s?s.desc:'';
+}
+
+function previewCSV(){
+  const f=document.getElementById('amFile').files[0];
+  if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const text=e.target.result;
+    const lines=text.split('\n').filter(l=>l.trim());
+    if(lines.length<2){document.getElementById('amPreview').textContent='Need at least 2 rows (header + data)';return}
+    csvHeaders=lines[0].split(',').map(h=>h.trim());
+    csvData=lines.slice(1,Math.min(lines.length,50)).map(l=>l.split(',').map(v=>v.trim()));
+    const preview=lines.slice(0,Math.min(lines.length,21)).join('\n');
+    document.getElementById('amPreview').textContent=preview;
+    document.getElementById('amProcessBtn').disabled=false;
+  };
+  reader.readAsText(f);
+}
+
+async function processAnalysis(){
+  const apiKey=await dbGet('settings','api_key');
+  if(!apiKey){toast('Set API key first','var(--red)');return}
+  document.getElementById('amStep1').classList.remove('active');
+  document.getElementById('amStep2').classList.add('active');
+  document.getElementById('amProgress').textContent='⏳ Sending to AI...';
+
+  const sid=parseInt(document.getElementById('amSkill').value);
+  const skill=await dbGet('skills',sid);
+  const param=document.getElementById('amParam').value;
+  const ep=(await dbGet('settings','api_endpoint'))?.value||'https://api.deepseek.com/v1/chat/completions';
+  const model=(await dbGet('settings','api_model'))?.value||'deepseek-chat';
+  const sysPrompt=(await dbGet('settings','system_prompt'))?.value||'You are Virgo.';
+
+  const csvSample=JSON.stringify({headers:csvHeaders,rows:csvData.slice(0,30)});
+  const chartTpl=skill?.chartTemplate||'{}';
+
+  const prompt=`You are processing experimental data using the skill "${skill?.name}".\n\nSKILL: ${skill?.desc}\nKEY PARAMS TO EXTRACT: ${skill?.keyParams}\nCHART TEMPLATE: ${chartTpl}\nCHANGED PARAMETER: ${param||'none'}\nCSV DATA: ${csvSample}\n\nAnalyze this data. Return ONLY valid JSON (no markdown, no code fences):\n{\n  "chartData": { "labels": [...], "datasets": [{ "label": "...", "data": [...], "borderColor": "#2c5f8a", ... }] },\n  "chartOptions": { "scales": { "x": { "title": { "display": true, "text": "..." } }, "y": { "title": { "display": true, "text": "..." } } } },\n  "keyParams": { "param1": value, "param2": value, ... },\n  "summary": "2-3 sentence scientific summary of results."\n}`;
+
+  try{
+    const resp=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey.value},body:JSON.stringify({model,messages:[{role:'system',content:sysPrompt},{role:'user',content:prompt}],max_tokens:2000,temperature:0.2})});
+    const data=await resp.json();
+    document.getElementById('amProgress').textContent='✅ Processing complete';
+    if(!data.choices){toast('AI error: '+JSON.stringify(data).slice(0,200),'var(--red)');closeAnalysisModal();return}
+
+    const content=data.choices[0].message.content;
+    // Extract JSON (may be wrapped in ```json ... ```)
+    let json=content;
+    const m=content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if(m)json=m[1];
+    const result=JSON.parse(json);
+
+    // Generate publication-quality plot via matplotlib
+    document.getElementById('amProgress').textContent='🎨 Generating plot...';
+    var plotUrl='';
+    try{
+      var plotSpec={
+        type:skill.chartType||'line',
+        data:result.chartData||{},
+        options:{
+          xlabel:result.chartOptions?.scales?.x?.title?.text||'',
+          ylabel:result.chartOptions?.scales?.y?.title?.text||'',
+          title:(param?(param+': '):'')+skill.name,
+          width:6, height:4
+        }
+      };
+      // Transfer data from Chart.js format to matplotlib format
+      if(result.chartData?.datasets){
+        for(var ds of result.chartData.datasets){
+          if(ds.data&&!ds.data_y){ds.data_y=ds.data;delete ds.data}
+        }
+      }
+      var plotResp=await fetch('/plot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(plotSpec)});
+      var plotData=await plotResp.json();
+      plotUrl=plotData.url||'';
+    }catch(e){console.warn('Plot generation failed, using Chart.js fallback',e)}
+
+    // Save analysis
+    const analysis={
+      section:currentSectionForAnalysis,
+      title:(param?(param+': '):'')+skill.name,
+      skillId:sid,skillName:skill.name,
+      param:param,
+      plotUrl:plotUrl,
+      chartData:result.chartData,chartOptions:result.chartOptions||{},
+      chartType:skill.chartType,
+      keyParams:result.keyParams||{},
+      summary:result.summary||'',
+      csvRaw:csvHeaders.join(',')+'\n'+csvData.map(r=>r.join(',')).join('\n'),
+      projectId:getActiveProjectId(),
+      createdAt:new Date().toISOString()
+    };
+    const aid=await dbPut('analyses',analysis);
+    closeAnalysisModal();
+    await buildSidebar();
+    goPage('a_'+aid);
+    toast('Analysis complete ✓');
+  }catch(e){
+    document.getElementById('amProgress').textContent='❌ Error: '+e.message;
+    setTimeout(()=>{document.getElementById('amStep1').classList.add('active');document.getElementById('amStep2').classList.remove('active')},2000);
+  }
+}
+
+// ══════════ AI Generate Goals & Experimental Plan ══════════
+async function aiGeneratePlan(pageId){
+  const apiKey=await dbGet('settings','api_key');
+  if(!apiKey){toast('Set API key first','var(--red)');return}
+  var statusEl=document.getElementById('aiGenStatus');
+  if(statusEl)statusEl.textContent='⏳ Reading context...';
+
+  // Gather Purpose + Literature
+  var allPages=await dbGetAll('pages'),literature=await dbGetAll('literature');
+  var purpose='',litTexts=[];
+  for(var p of allPages){
+    if(p.section==='Purpose')purpose=(p.content||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+    if(p.section==='Literature')litTexts.push((p.title||'')+': '+(p.content||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim());
+  }
+  for(var l of literature){
+    litTexts.push('['+(l.year||'')+'] '+(l.title||'')+'. '+(l.authors||'')+'. '+(l.journal||'')+'. KEY: '+(l.notes||'').replace(/<[^>]+>/g,' ').slice(0,300));
+  }
+  if(!purpose){toast('Write Purpose page first','var(--red)');return}
+
+  if(statusEl)statusEl.textContent='⏳ Calling AI...';
+  const ep=(await dbGet('settings','api_endpoint'))?.value||'https://api.deepseek.com/v1/chat/completions';
+  const model=(await dbGet('settings','api_model'))?.value||'deepseek-chat';
+
+  const prompt=`You are an experimental research planner for materials science & electrochemistry.
+
+PROJECT PURPOSE: ${purpose}
+LITERATURE CONTEXT: ${litTexts.join(' | ').slice(0,3000)}
+
+Generate a complete experimental plan. For each step, exhaustively list ALL process parameters (fixed AND variable) and ALL measurement parameters. Nothing should be hidden — every condition the experimenter needs to control or record must be listed.
+
+Return ONLY valid JSON (no markdown, no code fences):
+{
+  "goals": [{"id":1, "goal":"Specific measurable goal", "status":"⬜ Pending"}],
+  "steps": [
+    {
+      "number": 1,
+      "title": "Descriptive step name",
+      "processParams": {
+        "fixed": [{"key":"Parameter name", "value":"Value", "unit":"unit"}],
+        "variable": [{"key":"Parameter name", "values":["val1","val2"], "unit":"unit"}]
+      },
+      "measurementParams": [{"key":"What to measure", "method":"Technique", "settings":"Relevant settings"}],
+      "benchmarks": [{"key":"Metric", "operator":"≤|≥|=|range", "target":"value", "unit":"unit"}]
+    }
+  ]
+}`;
+
+  try{
+    const resp=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey.value},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],max_tokens:8000,temperature:0.3})});
+    const data=await resp.json();
+    if(!data.choices){toast('AI error: '+JSON.stringify(data).slice(0,200),'var(--red)');if(statusEl)statusEl.textContent='❌ Failed';return}
+
+    var content=data.choices[0].message.content;
+    // Check if truncated (doesn't end with } or ])
+    var trimmed=content.trim();
+    if(trimmed.slice(-1)!=='}'&&trimmed.slice(-1)!==']'){
+      // Try to recover: find last complete object/array
+      var lastBrace=trimmed.lastIndexOf('}');
+      var lastBracket=trimmed.lastIndexOf(']');
+      var cutAt=Math.max(lastBrace,lastBracket);
+      if(cutAt>0){trimmed=trimmed.slice(0,cutAt+1);console.warn('AI response truncated, recovered to position '+cutAt)}
+    }
+    var m=trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if(m)trimmed=m[1];
+    var plan=safeJSONParse(trimmed);
+    if(!plan){toast('AI response not valid JSON','var(--red)');if(statusEl)statusEl.textContent='❌ Bad JSON';return}
+
+    if(statusEl)statusEl.textContent='💾 Saving plan...';
+    var pid=getActiveProjectId();
+
+    // 1. Update Goals page
+    var goalsHtml='<div class="card"><h3>Project Goals</h3><table class="data-tbl"><tr><th>#</th><th>Goal</th><th>Status</th></tr>';
+    for(var g of plan.goals||[]){
+      goalsHtml+='<tr><td>'+(g.id||'')+'</td><td>'+(g.goal||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</td><td>'+(g.status||'⬜ Pending')+'</td></tr>';
+    }
+    goalsHtml+='</table></div>';
+    var goalsPage=allPages.find(function(p){return p.section==='Goals'});
+    if(goalsPage){goalsPage.content=goalsHtml;await dbPut('pages',goalsPage);}
+
+    // 2. Create/update Experimental step pages + experiments
+    var steps=plan.steps||[];
+    for(var i=0;i<steps.length;i++){
+      var s=steps[i];
+      var sn=(i+1);
+      var fixedHtml=(s.processParams?.fixed||[]).map(function(p){return '<b>'+p.key.replace(/&/g,'&amp;')+':</b> '+p.value+(p.unit?' '+p.unit:'')}).join('<br>');
+      var varHtml=(s.processParams?.variable||[]).map(function(p){return '<b>'+p.key.replace(/&/g,'&amp;')+':</b> '+ (Array.isArray(p.values)?p.values.join(' / '):p.values)+(p.unit?' '+p.unit:'')}).join('<br>');
+      var detHtml=(s.measurementParams||[]).map(function(p){return '<b>'+p.key.replace(/&/g,'&amp;')+'</b> — '+p.method+(p.settings?' ('+p.settings+')':'')}).join('<br>');
+      var benchHtml=(s.benchmarks||[]).map(function(p){return '<b>'+p.key.replace(/&/g,'&amp;')+' '+p.operator+' '+p.target+'</b>'+(p.unit?' '+p.unit:'')}).join('<br>');
+
+      var stepContent='<div class="card"><h3>Step '+sn+' — '+s.title.replace(/&/g,'&amp;')+'</h3><div class="comic-grid">'
+        +'<div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body">'+(fixedHtml||'<i>None</i>')+'</div></div>'
+        +'<div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body">'+(varHtml||'<i>None</i>')+'</div></div>'
+        +'<div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body">'+(detHtml||'<i>TBD</i>')+'</div></div>'
+        +'<div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body">'+(benchHtml||'<i>TBD</i>')+'</div></div>'
+        +'</div></div>';
+
+      var title=sn+'. '+s.title;
+      var expPage=allPages.find(function(p){return p.section==='Experimental'&&p.title===title});
+      if(expPage){expPage.content=stepContent;await dbPut('pages',expPage);}
+      else{expPage={id:await dbPut('pages',{section:'Experimental',title:title,content:stepContent,projectId:pid,createdAt:new Date().toISOString()})};}
+
+      // Save structured experiment record
+      var expId=await dbPut('experiments',{
+        projectId:pid,pageId:expPage.id,stepNumber:sn,title:s.title,
+        processParams:s.processParams||{fixed:[],variable:[]},
+        measurementParams:s.measurementParams||[],
+        benchmarks:s.benchmarks||[],
+        runs:buildExperimentRuns(s.processParams?.variable||[],s.benchmarks||[]),
+        status:'planned',createdAt:new Date().toISOString()
+      });
+
+      // 3. Pre-fill Results page
+      await syncResultsForStep(sn,title,pid);
+    }
+
+    if(statusEl)statusEl.textContent='✅ Done!';
+    await buildSidebar();
+    // Reload current Goals page
+    var gp=allPages.find(function(p){return p.section==='Goals'});
+    if(gp){goPage('p_'+gp.id);}
+    toast('Generated '+steps.length+' steps ✓');
+  }catch(e){
+    if(statusEl)statusEl.textContent='❌ '+e.message;
+    console.error(e);
+  }
+}
+// Helpers
+function buildExperimentRuns(variableParams,benchmarks){
+  if(!variableParams||variableParams.length===0)return [{id:'run_1',variableValues:{},measurements:{},benchmarkResults:{},status:'pending'}];
+  // Compute all combinations of variable values
+  var keys=variableParams.map(function(p){return p.key});
+  var valueSets=variableParams.map(function(p){return Array.isArray(p.values)?p.values:[p.values]});
+  var combos=cartesian(valueSets);
+  return combos.map(function(combo,i){
+    var vv={};for(var j=0;j<keys.length;j++)vv[keys[j]]=combo[j];
+    return {id:'run_'+(i+1),variableValues:vv,measurements:{},benchmarkResults:{},rawData:[],status:'pending'};
+  });
+}
+function cartesian(arrays){return arrays.reduce(function(a,b){return a.flatMap(function(x){return b.map(function(y){return x.concat([y])})})},[[]]);}
+function safeJSONParse(str){
+  // Try vanilla parse first
+  try{return JSON.parse(str)}catch(e){}
+  // Fix common AI JSON issues
+  try{
+    // 1. Quote unquoted keys: {key: → {"key":
+    var fixed=str.replace(/(\{|\,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\:/g,'$1"$2":');
+    // 2. Fix trailing commas: ,} → }  ,] → ]
+    fixed=fixed.replace(/\,\s*\}/g,'}').replace(/\,\s*\]/g,']');
+    // 3. Fix single quotes
+    // (skip — rare in AI output)
+    return JSON.parse(fixed);
+  }catch(e2){
+    console.error('safeJSONParse failed at:', str.slice(Math.max(0,(e2.message.match(/position (\d+)/)||[0,0])[1]-60), (e2.message.match(/position (\d+)/)||[0,str.length])[1]+60));
+    console.error('Original error:', e2.message);
+    return null;
+  }
+}
+function syncResultsForStep(stepNum,stepTitle,pid){
+  return dbGetAll('pages').then(function(allP){
+    var base=stepTitle.replace(/^\d+\.\s*/,'');
+    var title=stepNum+'. '+base;
+    var existing=allP.find(function(p){return p.section==='Results'&&p.title===title&&p.projectId==pid});
+    if(existing)return Promise.resolve(existing); // don't overwrite
+    var html='<div class="card"><h3>'+esc(stepTitle)+' — Results</h3><p style="font-size:10px;color:var(--muted)">Fill in measurements for each experimental run. Click + Add Analysis to process data.</p>';
+    html+='<table class="data-tbl"><tr><th>Run</th><th>Variable</th><th>Measurements</th><th>Pass?</th></tr><tr><td colspan="4" style="color:var(--muted)">Results will be entered during experiments</td></tr></table></div>';
+    html+='<div style="display:flex;gap:8px;margin-top:8px"><button class="btn prim sm" onclick="openAnalysisModal(\''+escAttr(title)+'\')">+ Add Analysis</button></div>';
+    return dbPut('pages',{section:'Results',title:title,content:html,projectId:pid,createdAt:new Date().toISOString()});
+  });
+}
+
+function renderAnalysisPage(a){
+  const kp=a.keyParams||{};
+  const kpRows=Object.entries(kp).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="hl">${esc(String(v))}</td></tr>`).join('');
+  const chartId='chart_a_'+a.id;
+  var notes=(a.notes||'').replace(/\\n/g,'<br>');
+  var tableHtml='';
+  var allCols=[],allRows=[];
+  // Source 1: parse raw CSV
+  if(a.csvRaw){
+    var csvLines=a.csvRaw.split(/\r?\n/);
+    if(csvLines.length>=2){
+      var csvHeaders=csvLines[0].split(',').map(function(h){return h.trim()});
+      for(var hi=0;hi<csvHeaders.length;hi++)allCols.push(csvHeaders[hi]);
+      for(var cl=1;cl<csvLines.length;cl++){
+        var cells=csvLines[cl].split(',').map(function(c){return c.trim()});
+        allRows.push(cells);
+      }
+    }
+  }
+  // Source 2: chartData (fallback or supplement)
+  var dss2=(a.chartData&&a.chartData.datasets)||[];
+  // If csvRaw had data, skip dataset[0] (it's the same); otherwise use all
+  var startOi=allCols.length>0?1:0;
+  for(var oi=startOi;oi<dss2.length;oi++){
+    var ds=dss2[oi];
+    allCols.push(ds.label||('Y'+(oi+1)));
+    var od=ds.data||[];
+    for(var oi2=0;oi2<od.length;oi2++){
+      while(allRows.length<=oi2)allRows.push(new Array(allCols.length-1).fill(''));
+      var it2=od[oi2];
+      allRows[oi2].push((typeof it2==='object'&&it2!==null)?(it2.y!==undefined?it2.y:''):it2);
+    }
+  }
+  // Render table
+  if(allCols.length>0&&allRows.length>0){
+    var hh='';
+    for(var hc=0;hc<allCols.length;hc++)hh+='<th style="font-size:9px;padding:2px 8px">'+esc(allCols[hc])+'</th>';
+    var bb='';
+    for(var rr=0;rr<Math.min(allRows.length,50);rr++){
+      var row='<tr>';
+      for(var cc=0;cc<allCols.length;cc++){
+        var v=(allRows[rr]&&allRows[rr][cc]!==undefined)?allRows[rr][cc]:'';
+        row+='<td style="font-size:9px">'+(v!==''&&v!==undefined&&v!==null?esc(String(v)):'—')+'</td>';
+      }
+      row+='</tr>';bb+=row;
+    }
+    tableHtml='<table class="data-tbl" style="margin-top:6px"><thead><tr>'+hh+'</tr></thead><tbody>'+bb+'</tbody></table>';
+  }
+  // Debug: if table is empty, show raw CSV text
+  if(!tableHtml&&a.csvRaw){
+    tableHtml='<pre style="font-size:9px;max-height:200px;overflow:auto;background:#f5f4f0;padding:8px;border-radius:3px">'+esc(a.csvRaw.slice(0,2000))+'</pre>';
+  }
+  return `<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <h3 style="margin:0">${esc(a.title||'Analysis')}</h3>
+      <div style="display:flex;gap:4px">
+        <button class="btn sm grn" onclick="overlayInput_${a.id}.click()">📈 Overlay</button>
+        <input type="file" id="overlayInput_${a.id}" accept=".csv,.txt,.tsv" style="display:none" onchange="addAnalysisOverlay(${a.id},this)">
+        <button class="btn sm" onclick="editKeyParams(${a.id})">✎ Params</button>
+        <button class="btn sm" onclick="viewRawData(${a.id})">📋 Data</button>
+        <button class="btn sm" onclick="deleteAnalysisPage(${a.id})" style="color:var(--red)">🗑</button>
+      </div>
+    </div>
+    <div class="analysis-layout">
+      <div class="analysis-chart">
+        ${a.plotUrl?`<img src="${esc(a.plotUrl)}" style="width:100%;max-width:100%" alt="Matplotlib plot">`:`<canvas id="${chartId}"></canvas>`}
+        <div style="margin-top:8px;font-size:9px;color:var(--muted)">Skill: ${esc(a.skillName)} · Param: ${esc(a.param||'—')}</div>
+        ${tableHtml}
+      </div>
+      <div class="analysis-side">
+        <div class="card" style="padding:14px 16px"><h4>📊 Key Parameters</h4><table class="data-tbl">${kpRows||'<tr><td colspan="2">No params extracted</td></tr>'}</table></div>
+        <div class="card" style="padding:14px 16px"><h4>🤖 AI Summary</h4><div class="chat-msg agent" style="max-width:100%;font-size:10px">${esc(a.summary||'No summary')}</div></div>
+        <div class="card" style="padding:14px 16px"><h4>📝 Notes</h4>
+          <div class="inline-editor" id="analysisNotes" contenteditable="true" data-aid="${a.id}" style="min-height:12vh;font-size:11px;line-height:1.8">${notes||'<i>Click to add notes…</i>'}</div>
+          <div class="save-indicator" id="saveIndicator" style="display:none">Saved</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function renderAnalysisChart(aid){
+  dbGet('analyses',aid).then(function(a){
+    if(!a||!window.Chart)return;
+    var canvas=document.getElementById('chart_a_'+aid);
+    if(!canvas||a.plotUrl)return;
+    var cd=a.chartData||{labels:[],datasets:[]};
+    var co=a.chartOptions||{};
+    co.responsive=true;
+    try{new Chart(canvas,{type:a.chartType||'line',data:cd,options:co})}catch(e){console.error('Chart render error',e)}
+  });
+}
+
+async function deleteAnalysisPage(id){
+  if(!confirm('Delete this analysis?'))return;
+  await dbDelete('analyses',id);
+  await buildSidebar();
+  var pid=getActiveProjectId();
+  var allP=await dbGetAll('pages')||[];
+  var resultsPage=allP.find(function(p){return p.projectId===pid&&p.section==='Results';});
+  if(resultsPage)goPage('p_'+resultsPage.id);
+  else goPage('dashboard');
+  toast('Deleted');
+}
+async function addAnalysisOverlay(aid,inputEl){
+  var f=inputEl.files[0];
+  if(!f)return;
+  var a=await dbGet('analyses',aid);
+  if(!a){toast('Analysis not found','var(--red)');return;}
+  var reader=new FileReader();
+  reader.onload=async function(ev){
+    var text=ev.target.result;
+    var lines=text.trim().split(/\r?\n/);
+    if(lines.length<2){toast('CSV needs header + at least 1 row','var(--red)');return;}
+    var headers=lines[0].split(',').map(function(h){return h.trim()});
+    var xVals=[],yVals=[],extraCols=[];
+    for(var i=1;i<Math.min(lines.length,2001);i++){
+      var cells=lines[i].split(',').map(function(c){return c.trim()});
+      if(cells.length>=1)xVals.push(isNaN(+cells[0])?cells[0]:+cells[0]);
+      if(cells.length>=2)yVals.push(isNaN(+cells[1])?cells[1]:+cells[1]);
+      for(var j=2;j<cells.length;j++){
+        if(!extraCols[j-2])extraCols[j-2]=[];
+        extraCols[j-2].push(isNaN(+cells[j])?cells[j]:+cells[j]);
+      }
+    }
+    // Determine label from filename
+    var label=f.name.replace(/\.(csv|txt|tsv)$/i,'');
+    var colors=['#2c5f8a','#b33','#2a7d4f','#b8860b','#8b5cf6','#e07b39'];
+    var existingCount=(a.chartData&&a.chartData.datasets)?a.chartData.datasets.length:0;
+    var colorIdx=existingCount%colors.length;
+    // Use new CSV's x-values; if same length as existing, use those
+    var cd=a.chartData||{labels:[],datasets:[]};
+    if(!cd.labels)cd.labels=[];
+    if(!cd.datasets)cd.datasets=[];
+    // Add primary y-column as new dataset
+    cd.datasets.push({label:label,data:yVals,borderColor:colors[colorIdx],backgroundColor:colors[colorIdx],tension:0.3,pointRadius:2});
+    // If new CSV has more x-values, update labels
+    if(xVals.length>cd.labels.length)cd.labels=xVals.map(String);
+    // Extra columns become additional datasets
+    for(var ec=0;ec<extraCols.length;ec++){
+      colorIdx=(colorIdx+1)%colors.length;
+      cd.datasets.push({label:(headers[ec+2]||(label+'_col'+(ec+3))),data:extraCols[ec],borderColor:colors[colorIdx],backgroundColor:colors[colorIdx],tension:0.3,pointRadius:2});
+    }
+    a.chartData=cd;
+    a.plotUrl=''; // clear matplotlib plot, use Chart.js for overlays
+    await dbPut('analyses',a);
+    goPage('a_'+aid);
+    toast('Overlay added ✓');
+  };
+  reader.readAsText(f);
+}
+
+async function editKeyParams(id){
+  const a=await dbGet('analyses',id);
+  if(!a)return;
+  const newParams=prompt('Edit key parameters (JSON format):',JSON.stringify(a.keyParams||{},null,2));
+  if(!newParams)return;
+  try{a.keyParams=JSON.parse(newParams);await dbPut('analyses',a);goPage('a_'+id);toast('Updated ✓')}catch(e){toast('Invalid JSON','var(--red)')}
+}
+
+function viewRawData(id){
+  dbGet('analyses',id).then(a=>{
+    if(!a||!a.csvRaw)return;
+    const w=window.open('','_blank','width=700,height=500');
+    w.document.write('<pre style="font-size:11px;font-family:monospace">'+esc(a.csvRaw)+'</pre>');
+  });
+}
+
+
+// ═══════════════════════════════════════
+// RESULTS PAGE — card-based list (like Literature)
+// ═══════════════════════════════════════
+function renderAnalysisCard(a){
+  var kp=a.keyParams||{};
+  var kpSummary=Object.entries(kp).slice(0,4).map(function(e){return esc(e[0])+': '+esc(String(e[1]));}).join(' · ')||'—';
+  var dateStr=a.createdAt?new Date(a.createdAt).toLocaleDateString():'';
+  var chartIcon={'line':'📈','scatter':'🔵','bar':'📊','polarization':'⚡','eis':'🔄','durability':'⏱'};
+  var icon=chartIcon[a.chartType]||'📈';
+  return `<div class="card" style="padding:14px 16px;cursor:pointer;margin-bottom:8px;transition:all .15s" onclick="goPage('a_${a.id}')" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bdr)'">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:22px;flex-shrink:0;padding-top:2px">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px;color:var(--acc)">${esc(a.title||'Analysis')}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${esc(a.skillName||'')}${a.param?' · '+esc(a.param):''}${dateStr?' · '+dateStr:''}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${kpSummary}</div>
+        ${a.summary?`<div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px">${esc(a.summary.slice(0,180))}${a.summary.length>180?'...':''}</div>`:''}
+      </div>
+      <button class="btn sm" style="flex-shrink:0" onclick="event.stopPropagation();deleteAnalysisCard(${a.id})">🗑</button>
+    </div>
+  </div>`;
+}
+async function renderResultsPage(section){
+  var allA=await dbGetAll('analyses');
+  var pid=getActiveProjectId();
+  var baseSection=section.replace(/\s*Results\s*$/,'');
+  var stepAnalyses=allA.filter(function(a){
+    if(!a.projectId||a.projectId===pid){
+      var as=a.section||'';
+      return as===baseSection||as===section||as.startsWith(section)||section.startsWith(as);
+    }
+    return false;
+  });
+  stepAnalyses.sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'')});
+  var h=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin-bottom:0">📊 ${esc(section)}</h3><button class="btn prim sm" onclick="openAnalysisModal('${escAttr(section)}')">+ Add Analysis</button></div></div>`;
+  if(stepAnalyses.length===0){
+    h+='<div class="card"><p style="font-size:11px;color:var(--muted)">No analyses yet. Click + Add Analysis to upload CSV data and generate charts.</p></div>';
+  }else{
+    stepAnalyses.forEach(function(a){h+=renderAnalysisCard(a);});
+  }
+  return '<div class="page active">'+h+'</div>';
+}
+async function deleteAnalysisCard(id){
+  if(!confirm('Delete this analysis?'))return;
+  await dbDelete('analyses',id);
+  await buildSidebar();
+  var p=await dbGet('pages',parseInt(currentPage.slice(2)));
+  if(p&&p.section==='Results'){
+    document.getElementById('pageContainer').innerHTML='<div class="slide">'+await renderResultsPage(p.title)+'</div>';
+  }
+  toast('Deleted');
+}
+
+// ═══════════════════════════════════════
+// SKILL TEMPLATE DETAIL PAGE
+// ═══════════════════════════════════════
+function renderSkillPage(s){
+  const tplPretty=JSON.stringify(JSON.parse(s.chartTemplate||'{}'),null,2);
+  const promptTemplate='You are processing experimental data using the skill \"'+esc(s.name)+'\".\n\n'
+    +'SKILL: '+esc(s.desc)+'\n'
+    +'KEY PARAMS TO EXTRACT: '+esc(s.keyParams)+'\n'
+    +'CHART TEMPLATE: (see Chart.js JSON below)\n'
+    +'CHANGED PARAMETER: [user input from "Changed Parameter" field]\n'
+    +'CSV DATA: [uploaded CSV — headers + up to 30 rows]\n\n'
+    +'Analyze this data. Return ONLY valid JSON (no markdown, no code fences):\n'
+    +'{\n'
+    +'  \"chartData\": { \"labels\": [...], \"datasets\": [{ \"label\": \"...\", \"data\": [...], \"borderColor\": \"#2c5f8a\", ... }] },\n'
+    +'  \"chartOptions\": { \"scales\": { \"x\": { \"title\": { \"display\": true, \"text\": \"...\" } }, \"y\": { \"title\": { \"display\": true, \"text\": \"...\" } } } },\n'
+    +'  \"keyParams\": { \"param1\": value, \"param2\": value, ... },\n'
+    +'  \"summary\": \"2-3 sentence scientific summary of results.\"\n'
+    +'}';
+  return '<div class=\"card\"><h3>📄 '+esc(s.name)+'</h3>'
+    +'<table class=\"data-tbl\" style=\"margin-bottom:16px\">'
+    +'<tr><th style=\"width:100px\">Category</th><td>'+esc(s.category)+'</td></tr>'
+    +'<tr><th>Chart Type</th><td><code>'+esc(s.chartType)+'</code></td></tr>'
+    +'<tr><th>Key Params</th><td style=\"font-family:monospace;font-size:10px\">'+esc(s.keyParams)+'</td></tr>'
+    +'<tr><th>Description</th><td style=\"font-size:10px\">'+esc(s.desc)+'</td></tr>'
+    +'</table>'
+    +'<h4 style=\"font-size:11px;margin:12px 0 6px\">📊 Chart.js Template (executed client-side)</h4>'
+    +'<pre style=\"background:#f5f4f0;padding:12px;font-size:10px;border-radius:3px;overflow-x:auto;max-height:200px;overflow-y:auto\">'+esc(tplPretty)+'</pre>'
+    +'<h4 style=\"font-size:11px;margin:12px 0 6px\">🤖 AI Prompt (sent to LLM)</h4>'
+    +'<pre style=\"background:#f5f4f0;padding:12px;font-size:10px;border-radius:3px;overflow-x:auto;max-height:300px;overflow-y:auto\">'+esc(promptTemplate)+'</pre>'
+    +'</div>';
+}
+
+// ═══════════════════════════════════════
+// DYNAMIC FLOWCHART
+// ═══════════════════════════════════════
+async function getStepPages(){
+  const all=await dbGetAll('pages');
+  var pid=getActiveProjectId();
+  return all.filter(function(p){return p.section==='Experimental'&&(p.title||'').match(/^\d+\./)&&(!p.projectId||p.projectId===pid)});
+}
+async function getFlowOrder(){
+  const s=await dbGet('settings','flowchart_order_'+getActiveProjectId());
+  return s?s.value:null;
+}
+async function saveFlowOrder(ids){
+  await dbPut('settings',{key:'flowchart_order_'+getActiveProjectId(),value:ids});
+}
+async function renderFlowchart(){
+  var steps=await getStepPages();
+  var order=await getFlowOrder();
+  // Sort by saved order, fallback to title sort
+  if(order){
+    var map={};steps.forEach(function(s){map[s.id]=s});
+    steps=order.map(function(id){return map[id]}).filter(Boolean);
+    // Append any steps not in saved order
+    steps.forEach(function(s){delete map[s.id]});
+    for(var k in map)steps.push(map[k]);
+  }else{
+    steps.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+  }
+  var h='<div class="card"><h3>Experimental Flow</h3><div class="flow-list" id="flowList">';
+  steps.forEach(function(s,i){
+    var num=(s.title||'').match(/^(\d+)\./);var n=num?num[1]:i+1;
+    var preview='';
+    if(s.content){
+      var m=s.content.match(/comic-panel[^]*?cp-body[^>]*>([^<]+)/);
+      if(m)preview=m[1].replace(/<[^>]+>/g,' ').trim().slice(0,60);
+    }
+    h+='<div class="flow-item" draggable="true" data-id="'+s.id+'" data-idx="'+i+'" ondragstart="fdStart(event)" ondragover="fdOver(event)" ondragleave="fdLeave(event)" ondrop="fdDrop(event)" ondragend="fdEnd(event)">';
+    h+='<span class="flow-drag">≡</span>';
+    h+='<span class="flow-num">'+esc(n)+'</span>';
+    h+='<div class="flow-info" onclick="event.stopPropagation();goPage(\'p_'+s.id+'\')" style="cursor:pointer" title="Open step page"><div class="flow-title">'+esc((s.title||'').replace(/^\d+\.\s*/,''))+'</div>';
+    if(preview)h+='<div class="flow-preview">'+esc(preview)+'</div>';
+    h+='</div></div>';
+    if(i<steps.length-1)h+='<div class="flow-arrow">↓</div>';
+  });
+  h+='<div class="flow-arrow">↓</div>';
+  h+='<div class="flow-add" onclick="addStepToFlow()">➕ Add Step</div>';
+  h+='</div></div>';
+  return '<div class="page active">'+h+'</div>';
+}
+// DnD handlers
+var fdDragId=null;
+function fdStart(e){fdDragId=e.target.dataset.id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',e.target.dataset.id)}
+function fdOver(e){e.preventDefault();e.dataTransfer.dropEffect='move';var t=e.target.closest('.flow-item');if(t&&t.dataset.id!==fdDragId)t.classList.add('drag-over')}
+function fdLeave(e){var t=e.target.closest('.flow-item');if(t)t.classList.remove('drag-over')}
+async function fdDrop(e){
+  e.preventDefault();
+  var t=e.target.closest('.flow-item');
+  if(!t||t.dataset.id===fdDragId)return;
+  t.classList.remove('drag-over');
+  var items=document.querySelectorAll('#flowList .flow-item');
+  var ids=[];items.forEach(function(el){ids.push(parseInt(el.dataset.id))});
+  // Move dragged item to drop position
+  var fromIdx=ids.indexOf(parseInt(fdDragId));
+  var toIdx=ids.indexOf(parseInt(t.dataset.id));
+  if(fromIdx>-1&&toIdx>-1){
+    ids.splice(fromIdx,1);ids.splice(toIdx,0,parseInt(fdDragId));
+    await saveFlowOrder(ids);
+    // Renumber all step page titles
+    var allSteps=await getStepPages();
+    var pid=getActiveProjectId();
+    for(var i=0;i<ids.length;i++){
+      var step=allSteps.find(function(s){return s.id===ids[i]});
+      if(step){
+        var base=step.title.replace(/^\d+\.\s*/,'');
+        var newTitle=(i+1)+'.'+(base?' '+base:'');
+        if(step.title!==newTitle){step.title=newTitle;await dbPut('pages',step)}
+        // Sync Results page
+        await syncResultsForStep(i+1,newTitle,pid);
+      }
+    }
+    await buildSidebar();
+    goPage('sec_Experimental');
+  }
+}
+function fdEnd(e){e.target.classList.remove('dragging');document.querySelectorAll('.flow-item').forEach(function(el){el.classList.remove('drag-over')})}
+async function addStepToFlow(){
+  openStepModal();
+}
+
+// ═══════════════════════════════════════
+// PAGE EDITOR
+// ═══════════════════════════════════════
+function execCmd(cmd,val){
+  document.execCommand(cmd,false,val||null);
+  document.getElementById('peContent').focus();
+}
+
+// ══════════ Floating Format Toolbar ══════════
+var _savedRange=null;
+
+function formatCmd(cmd){
+  restoreSavedRange();
+  document.execCommand(cmd,false,null);
+  updateFormatBar();
+  triggerBlockSave();
+}
+function formatLink(){
+  var url=prompt('Link URL:','https://');
+  if(url){
+    restoreSavedRange();
+    document.execCommand('createLink',false,url);
+  }
+  updateFormatBar();
+  triggerBlockSave();
+}
+function saveSelection(){
+  var sel=window.getSelection();
+  if(sel.rangeCount&&!sel.isCollapsed){
+    _savedRange=sel.getRangeAt(0).cloneRange();
+    _savedRange._ed=document.activeElement;
+  }
+}
+function restoreSavedRange(){
+  if(!_savedRange)return;
+  var sel=window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(_savedRange);
+  if(_savedRange._ed&&_savedRange._ed.focus)_savedRange._ed.focus();
+}
+function triggerBlockSave(){
+  // Try comic panel save first (stored on window by goPage)
+  if(window._comicSaveFn){window._comicSaveFn();return;}
+  // Try main block editor save
+  if(typeof blockChanged==='function')blockChanged();
+}
+function showFormatBar(){
+  var sel=window.getSelection();
+  if(!sel.rangeCount||sel.isCollapsed){hideFormatBar();return;}
+  var node=sel.anchorNode;
+  var bc=null;
+  if(node){
+    if(node.nodeType===3)bc=node.parentElement;
+    else bc=node;
+    bc=bc?bc.closest('.block-content')||bc.closest('.inline-editor'):null;
+  }
+  if(!bc){hideFormatBar();return;}
+  saveSelection();
+  var rect=sel.getRangeAt(0).getBoundingClientRect();
+  var bar=document.getElementById('formatBar');
+  bar.style.visibility='hidden';
+  bar.style.display='flex';
+  var top=rect.top-bar.offsetHeight-8;
+  if(top<4)top=rect.bottom+8;
+  var left=rect.left+rect.width/2-bar.offsetWidth/2;
+  if(left<8)left=8;
+  if(left+bar.offsetWidth>window.innerWidth-8)left=window.innerWidth-bar.offsetWidth-8;
+  bar.style.top=top+'px';
+  bar.style.left=left+'px';
+  bar.style.visibility='visible';
+  updateFormatBar();
+}
+function hideFormatBar(){
+  document.getElementById('formatBar').style.display='none';
+  _savedRange=null;
+}
+function updateFormatBar(){
+  var btns=document.querySelectorAll('#formatBar button');
+  btns.forEach(function(b){
+    var cmd=b.getAttribute('onclick')||'';
+    if(cmd.indexOf('formatCmd')===-1)return;
+    var m=cmd.match(/formatCmd\('(\w+)'\)/);
+    if(m){b.classList.toggle('active',document.queryCommandState(m[1]));}
+  });
+}
+document.addEventListener('selectionchange',function(){
+  if(slashActive)return;
+  var sel=window.getSelection();
+  if(!sel.rangeCount||sel.isCollapsed){hideFormatBar();return;}
+  clearTimeout(window._fmtTimer);
+  window._fmtTimer=setTimeout(showFormatBar,150);
+});
+document.addEventListener('mousedown',function(e){
+  if(!document.getElementById('formatBar').contains(e.target))hideFormatBar();
+});
+// ═══════════════ Slash Commands ═══════════════
+const SLASH_COMMANDS=[
+  {icon:'H1',label:'Heading 1',desc:'Large',html:'<h2>Heading 1</h2>'},
+  {icon:'H2',label:'Heading 2',desc:'Medium',html:'<h3>Heading 2</h3>'},
+  {icon:'H3',label:'Heading 3',desc:'Small',html:'<h4>Heading 3</h4>'},
+  {icon:'•',label:'Bullet List',desc:'Unordered',html:'<ul><li>List item</li></ul>'},
+  {icon:'1.',label:'Numbered List',desc:'Ordered',html:'<ol><li>List item</li></ol>'},
+  {icon:'📊',label:'Table',desc:'3×3',html:'<table class=\"data-tbl\"><tr><th>A</th><th>B</th><th>C</th></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr></table>'},
+  {icon:'━',label:'Divider',desc:'---',html:'<hr style=\"border:none;border-top:1px solid var(--bdr);margin:12px 0\">'},
+  {icon:'💬',label:'Quote',desc:'Blockquote',html:'<blockquote style=\"border-left:3px solid var(--acc);padding:4px 12px;margin:8px 0;color:var(--muted)\">Quote text</blockquote>'},
+  {icon:'📋',label:'Code Block',desc:'Monospace',html:'<pre style=\"background:#f5f4f0;padding:8px;border-radius:3px;font-size:10px;font-family:monospace\">code here</pre>'},
+  {icon:'🖼️',label:'Image',desc:'Placeholder',html:'<div style=\"border:1px dashed var(--bdr);padding:20px;text-align:center;border-radius:4px;color:var(--muted);font-size:10px\">🖼️ Drag image here or paste</div>'},
+];
+var slashActive=false,slashQuery='',slashIdx=0,slashRange=null;
+
+function initSlashMenu(edId){
+  var ed=document.getElementById(edId);
+  if(!ed)return;
+  ed.addEventListener('keydown',function(e){
+    if(e.key==='/'&&!slashActive){
+      setTimeout(function(){openSlashMenu(ed);},10);
+    }
+    if(slashActive){
+      if(e.key==='ArrowDown'){e.preventDefault();slashIdx=(slashIdx+1)%filteredSlash().length;renderSlashMenu();return}
+      if(e.key==='ArrowUp'){e.preventDefault();slashIdx=(slashIdx-1+filteredSlash().length)%filteredSlash().length;renderSlashMenu();return}
+      if(e.key==='Enter'){e.preventDefault();applySlashCommand(ed);return}
+      if(e.key==='Escape'){closeSlashMenu();return}
+      if(e.key==='Backspace'){
+        setTimeout(function(){
+          slashQuery=extractSlashQuery(ed);
+          if(!slashQuery){closeSlashMenu();return}
+          slashIdx=0;renderSlashMenu();
+        },10);
+        return;
+      }
+      setTimeout(function(){
+        slashQuery=extractSlashQuery(ed);
+        slashIdx=0;renderSlashMenu();
+      },10);
+    }
+  });
+  ed.addEventListener('click',function(){if(slashActive)closeSlashMenu();});
+  document.addEventListener('click',function(e){
+    if(slashActive&&!document.getElementById('slashMenu').contains(e.target)&&e.target!==ed)closeSlashMenu();
+  });
+}
+function bindSlashToInline(){
+  var ed=document.getElementById('inlineContent');
+  if(!ed||ed._slashInit)return;ed._slashInit=true;
+  initSlashMenu('inlineContent');
+}
+
+function openSlashMenu(ed){
+  var sel=window.getSelection();
+  if(!sel.rangeCount)return;
+  var node=sel.anchorNode;if(!node)return;
+  // Find the '/' position
+  var text=node.textContent||'';
+  var offset=sel.anchorOffset;
+  var before=text.slice(0,offset);
+  var slashPos=before.lastIndexOf('/');
+  if(slashPos===-1)return;
+  slashRange=document.createRange();
+  slashRange.setStart(node,slashPos);
+  slashRange.setEnd(node,offset);
+  slashQuery=before.slice(slashPos+1);
+  slashIdx=0;slashActive=true;
+  var rect=sel.getRangeAt(0).getBoundingClientRect();
+  var menu=document.getElementById('slashMenu');
+  menu.style.top=(rect.bottom+4)+'px';
+  menu.style.left=rect.left+'px';
+  renderSlashMenu();
+}
+
+function extractSlashQuery(ed){
+  var sel=window.getSelection();
+  if(!sel.rangeCount)return'';
+  var node=sel.anchorNode;if(!node)return'';
+  var text=node.textContent||'';
+  var before=text.slice(0,sel.anchorOffset);
+  var slashPos=before.lastIndexOf('/');
+  if(slashPos===-1)return'';
+  return before.slice(slashPos+1);
+}
+
+function filteredSlash(){
+  if(!slashQuery)return SLASH_COMMANDS;
+  var q=slashQuery.toLowerCase();
+  return SLASH_COMMANDS.filter(function(c){return c.label.toLowerCase().indexOf(q)>=0;});
+}
+
+function renderSlashMenu(){
+  var menu=document.getElementById('slashMenu');
+  var items=filteredSlash();
+  if(items.length===0){menu.style.display='none';return}
+  menu.style.display='block';
+  menu.innerHTML=items.map(function(c,i){
+    return'<div class=\"slash-item'+(i===slashIdx?' selected':'')+'\" data-idx=\"'+i+'\" onmousedown=\"applySlashByIdx('+i+')\">'+
+      '<span class=\"slash-icon\">'+c.icon+'</span>'+
+      '<span class=\"slash-label\">'+c.label+'</span>'+
+      '<span class=\"slash-desc\">'+c.desc+'</span>'+
+    '</div>';
+  }).join('');
+}
+
+function applySlashCommand(ed){
+  var items=filteredSlash();
+  if(slashIdx>=items.length)return;
+  var cmd=items[slashIdx];
+  // Special: Image command opens file picker instead of inserting HTML
+  if(cmd.label==='Image'){
+    closeSlashMenu();
+    if(slashRange){slashRange.deleteContents();}
+    ed.focus();
+    pickAndUploadImage();
+    return;
+  }
+  // Delete the "/query" text
+  if(slashRange){
+    var sel=window.getSelection();
+    sel.removeAllRanges();sel.addRange(slashRange);
+    slashRange.deleteContents();
+    // Insert placeholder then replace with HTML
+    var placeholder=document.createTextNode('\u200B');
+    slashRange.insertNode(placeholder);
+    sel.removeAllRanges();
+    var span=document.createElement('span');
+    span.innerHTML=cmd.html;
+    placeholder.parentNode.replaceChild(span,placeholder);
+    // Move cursor after
+    var newRange=document.createRange();
+    newRange.setStartAfter(span);newRange.collapse(true);
+    sel.addRange(newRange);
+  }
+  closeSlashMenu();ed.focus();
+}
+
+function applySlashByIdx(i){slashIdx=i;var ed=document.activeElement;if(ed&&(ed.classList.contains('block-content')||ed.id==='peContent'||ed.id==='inlineContent'))applySlashCommand(ed);}
+function closeSlashMenu(){slashActive=false;slashQuery='';slashRange=null;document.getElementById('slashMenu').style.display='none';}
+
+initSlashMenu('peContent');
+function openEditor(id,section){
+  document.getElementById('pageEditor').classList.add('show');
+  document.getElementById('peId').value=id||'';
+  // Show loading state — don't clear fields until data loads
+  var secEl=document.getElementById('peSection'),nameEl=document.getElementById('peName'),conEl=document.getElementById('peContent');
+  if(id){
+    secEl.value='Loading...';nameEl.value='Loading...';conEl.innerHTML='<i>Loading...</i>';
+    dbGet('pages',id).then(p=>{
+      if(p){
+        secEl.value=p.section;nameEl.value=p.title;conEl.innerHTML=p.content;
+        document.getElementById('peDelete').style.display=(p.section==='Purpose'||p.section==='Goals')?'none':'inline-block';
+      }
+    }).catch(e=>{
+      console.error('openEditor: failed to load page',e);
+      secEl.value=section||'';nameEl.value='';conEl.innerHTML='';
+    });
+  }else{
+    secEl.value=section||'';nameEl.value='';conEl.innerHTML='';
+  }
+  var isMandatory=section==='Purpose'||section==='Goals';
+  document.getElementById('peDelete').style.display=(id&&!isMandatory)?'inline-block':'none';
+}
+function closeEditor(){document.getElementById('pageEditor').classList.remove('show')}
+async function savePage(){
+  const id=document.getElementById('peId').value;
+  // Guard: prevent save while data is still loading
+  const nameVal=document.getElementById('peName').value;
+  if(id&&nameVal==='Loading...'){toast('Please wait, loading...','var(--warn)');return;}
+  const d={section:document.getElementById('peSection').value||'Uncategorized',title:nameVal||'Untitled',content:document.getElementById('peContent').innerHTML,updatedAt:new Date().toISOString()};
+  if(id)d.id=parseInt(id);else d.createdAt=new Date().toISOString();
+  // Preserve original createdAt / projectId when editing existing page
+  if(id){const orig=await dbGet('pages',parseInt(id));if(orig){d.createdAt=orig.createdAt;if(!d.projectId)d.projectId=orig.projectId;}}
+  d.projectId=d.projectId||getActiveProjectId();
+  if(!d.projectId){toast('Error: no active project','var(--red)');return;}
+  await dbPut('pages',d);closeEditor();await buildSidebar();goPage('p_'+d.id);toast('Saved ✓');
+}
+async function deletePage(){const id=parseInt(document.getElementById('peId').value);if(!id||!confirm('Delete?'))return;const p=await dbGet('pages',id);if(p&&(p.section==='Purpose'||p.section==='Goals')){toast('Cannot delete mandatory section page','var(--red)');return}await dbDelete('pages',id);closeEditor();goPage('dashboard');await buildSidebar();toast('Deleted');}
+
+
+// ═══════════════════════════════════════
+// LITERATURE SYSTEM
+// ═══════════════════════════════════════
+function parseBibtex(bib){
+  var entry={};
+  var m=bib.match(/@\w+\s*\{[^,]*,\s*([\s\S]*)\}/i);
+  if(!m)return null;
+  var body=m[1];
+  var fields=body.split(/,(?=\s*\w+\s*=)/);
+  fields.forEach(function(f){
+    var fm=f.match(/^\s*(\w+)\s*=\s*[{"]([^}"]*)[}"]/);
+    if(fm)entry[fm[1].toLowerCase()]=fm[2];
+  });
+  entry.title=entry.title||'';
+  entry.author=entry.author||'';
+  entry.journal=entry.journal||'';
+  entry.year=entry.year||'';
+  entry.doi=entry.doi||'';
+  return entry;
+}
+// ══════════ Image Upload = file-based ══════════
+async function uploadImageBlob(blob){
+  var fd=new FormData();
+  fd.append('file',blob,'image.'+(blob.type.split('/')[1]||'png'));
+  try{
+    var resp=await fetch('/upload',{method:'POST',body:fd});
+    if(!resp.ok)throw new Error('Upload failed: '+resp.status);
+    var data=await resp.json();
+    return data.url; // e.g., '/uploads/abc123.png'
+  }catch(e){console.error('Image upload failed',e);return null}
+}
+async function handleImagePaste(e){
+  var items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image/')){
+      e.preventDefault();
+      var blob=items[i].getAsFile();
+      var url=await uploadImageBlob(blob);
+      if(url)insertImageAtCursor(url);
+      return;
+    }
+  }
+}
+async function handleImageDrop(e){
+  var file=e.dataTransfer.files[0];
+  if(!file||!file.type.startsWith('image/'))return;
+  e.preventDefault();
+  var url=await uploadImageBlob(file);
+  if(url)insertImageAtCursor(url);
+}
+function pickAndUploadImage(){
+  var inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.onchange=async function(){
+    if(inp.files[0]){
+      var url=await uploadImageBlob(inp.files[0]);
+      if(url)insertImageAtCursor(url);
+    }
+  };
+  inp.click();
+}
+function insertImageAtCursor(url){
+  var sel=window.getSelection();
+  if(!sel.rangeCount){
+    // Focus last active block-content
+    var bc=document.activeElement;
+    if(bc&&bc.classList.contains('block-content'))bc.focus();
+    sel=window.getSelection();
+  }
+  if(sel.rangeCount){
+    var img=document.createElement('img');
+    img.src=url;img.style.maxWidth='100%';img.style.borderRadius='4px';img.style.margin='8px 0';
+    sel.getRangeAt(0).insertNode(img);
+    sel.collapse(sel.focusNode,sel.focusNode.length||0);
+    // Trigger save
+    if(window._comicSaveFn)window._comicSaveFn();
+    if(typeof blockChanged==='function')blockChanged();
+  }
+}
+// Bind image paste/drop to ALL contenteditables globally
+document.addEventListener('paste',function(e){
+  var el=document.activeElement;
+  if(el&&(el.isContentEditable||el.classList.contains('block-content')||el.classList.contains('inline-editor')||el.id==='litNotes'||el.id==='peContent')){
+    handleImagePaste(e);
+  }
+});
+document.addEventListener('drop',function(e){
+  var el=document.activeElement;
+  if(el&&(el.isContentEditable||el.classList.contains('block-content')||el.classList.contains('inline-editor')||el.id==='litNotes'||el.id==='peContent')){
+    handleImageDrop(e);
+  }
+});
+// Remove old literature-specific handlers (bound by openLitEditor/closeLitEditor) — kept for cleanup reference
+function litNotesDrop(e){handleImageDrop(e)}  // redirect to global
+function litNotesPaste(e){handleImagePaste(e)} // redirect to global
+function openLitEditor(section,id){
+  document.getElementById('litEditor').classList.add('show');
+  document.getElementById('litId').value=id||'';
+  document.getElementById('litSection').value=section||'';
+  document.getElementById('litTitleField').value='';
+  document.getElementById('litAuthors').value='';
+  document.getElementById('litJournal').value='';
+  document.getElementById('litYearDoi').value='';
+  document.getElementById('litNotes').innerHTML='';
+  document.getElementById('litDelete').style.display=id?'inline-block':'none';
+  document.getElementById('litTitle').textContent=id?'Edit Literature':'📚 Add Literature';
+  var n=document.getElementById('litNotes');
+  n.addEventListener('drop',litNotesDrop);
+  n.addEventListener('paste',litNotesPaste);
+  if(id)dbGet('literature',parseInt(id)).then(function(l){
+    if(l){
+      document.getElementById('litTitleField').value=l.title||'';
+      document.getElementById('litAuthors').value=l.authors||'';
+      document.getElementById('litJournal').value=l.journal||'';
+      document.getElementById('litYearDoi').value=(l.year||'')+(l.doi?' / '+l.doi:'');
+      document.getElementById('litNotes').innerHTML=l.notes||'';
+    }
+  });
+}
+function closeLitEditor(){
+  var n=document.getElementById('litNotes');
+  n.removeEventListener('drop',litNotesDrop);
+  n.removeEventListener('paste',litNotesPaste);
+  document.getElementById('litEditor').classList.remove('show');
+}
+async function saveLiterature(){
+  var id=document.getElementById('litId').value;
+  var yd=document.getElementById('litYearDoi').value.split('/');
+  var year=yd[0].trim(),doi=yd.length>1?yd.slice(1).join('/').trim():'';
+  var notes=document.getElementById('litNotes').innerHTML;
+  // Extract first image as cover
+  var imgMatch=notes.match(/<img[^>]+src="([^"]+)"/);
+  var coverUrl=imgMatch?imgMatch[1]:'';
+  var d={
+    title:document.getElementById('litTitleField').value||'Untitled',
+    authors:document.getElementById('litAuthors').value,
+    journal:document.getElementById('litJournal').value,
+    year:year,doi:doi,
+    notes:notes,
+    image_url:coverUrl,
+    section:document.getElementById('litSection').value,
+    projectId:getActiveProjectId(),
+    updatedAt:new Date().toISOString()
+  };
+  if(id)d.id=parseInt(id);else d.createdAt=new Date().toISOString();
+  await dbPut('literature',d);
+  closeLitEditor();await buildSidebar();
+  if(currentPage==='sec_Literature')goPage('sec_Literature');
+  else if(currentPage.startsWith('lit_'))goPage('sec_Literature');
+  else goPage('dashboard');
+  toast('Saved ✓');
+}
+async function deleteLiterature(){
+  var id=parseInt(document.getElementById('litId').value);
+  if(!id||!confirm('Delete?'))return;
+  await dbDelete('literature',id);closeLitEditor();
+  if(currentPage==='sec_Literature')goPage('sec_Literature');
+  toast('Deleted');
+}
+async function litImportBibtex(){
+  var bib=prompt('Paste BibTeX entry:');
+  if(!bib)return;
+  var e=parseBibtex(bib);
+  if(!e){toast('Invalid BibTeX','var(--red)');return}
+  document.getElementById('litTitleField').value=e.title;
+  document.getElementById('litAuthors').value=e.author;
+  document.getElementById('litJournal').value=e.journal;
+  document.getElementById('litYearDoi').value=e.year+(e.doi?' / '+e.doi:'');
+  if(e.abstract)document.getElementById('litNotes').innerHTML='<p>'+esc(e.abstract)+'</p>';
+  toast('BibTeX parsed ✓');
+}
+async function litImportUrl(){
+  var url=prompt('Paste URL (DOI, arXiv, etc.):');
+  if(!url){return}
+  document.getElementById('litYearDoi').value=document.getElementById('litYearDoi').value||url;
+  toast('URL added — fill title/authors manually');
+}
+
+function renderLiteratureCard(l){
+  var img=l.image_url?`<div style="width:80px;height:80px;flex-shrink:0;overflow:hidden;border-radius:3px;background:#f0efe9"><img src="${esc(l.image_url)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.style.display='none'"></div>`:'';
+  var abs=(l.notes||'').replace(/<[^>]+>/g,' ').trim().slice(0,200);
+  return `<div class="card" style="padding:14px 16px;cursor:pointer;margin-bottom:8px;transition:all .15s" onclick="goPage('litdetail_${l.id}')" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bdr)'">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      ${img}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px;color:var(--acc)">${esc(l.title)}</div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${esc(l.authors||'')}${l.year?' ('+esc(l.year)+')':''}${l.journal?' — '+esc(l.journal):''}</div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.5">${esc(abs)}${abs.length>=200?'...':''}</div>
+        ${l.doi?`<div style="font-size:9px;color:var(--acc);margin-top:4px">DOI: ${esc(l.doi)}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+async function renderLitDetail(id){
+  var l=await dbGet('literature',id);
+  if(!l)return '<div class="card"><i>Literature not found</i></div>';
+  var img=l.image_url?`<div style="max-width:400px;margin-bottom:12px"><img src="${esc(l.image_url)}" style="width:100%;border-radius:4px" onerror="this.style.display='none'></div>`:'';
+  var notes=(l.notes||'').replace(/\\n/g,'<br>');
+  return `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <h3 style="margin:0">${esc(l.title)}</h3>
+      <button class="btn sm prim edit-btn-row" onclick="openLitEditor('${escAttr(l.section)}',${l.id})">✎ Edit</button>
+    </div>
+    ${img}
+    <table class="data-tbl" style="margin-bottom:12px">
+      <tr><th style="width:80px">Authors</th><td>${esc(l.authors||'—')}</td></tr>
+      <tr><th>Year</th><td>${esc(l.year||'—')}</td></tr>
+      <tr><th>Journal</th><td>${esc(l.journal||'—')}</td></tr>
+      <tr><th>DOI</th><td>${l.doi?`<a href="https://doi.org/${esc(l.doi)}" target="_blank">${esc(l.doi)}</a>`:'—'}</td></tr>
+      <tr><th>Section</th><td>${esc(l.section||'—')}</td></tr>
+    </table>
+    <div class="inline-editor" id="litNotes" contenteditable="true" data-lit-id="${l.id}" style="min-height:30vh;font-size:12px;line-height:2">${notes||'<i>Click to add notes…</i>'}</div>
+    <div class="save-indicator" id="saveIndicator" style="display:none">Saved</div>
+  </div>`;
+}
+
+async function renderLiteraturePage(section){
+  var all=await dbGetAll('literature');
+  var pid=getActiveProjectId();
+  var items=all.filter(function(l){return (!l.projectId||l.projectId===pid)&&(section==='ALL'||l.section===section);});
+  items.sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'')});
+  var label=section==='ALL'?'All Literature':section;
+  var h=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="margin-bottom:0">📚 ${esc(label)}</h3><button class="btn prim sm" onclick="openLitEditor('${escAttr(section==='ALL'?'Literature':section)}')">+ Add</button></div></div>`;
+  if(items.length===0)h+='<div class="card"><p style="font-size:11px;color:var(--muted)">No literature yet. Click + Add to import BibTeX or add manually.</p></div>';
+  else items.forEach(function(l){h+=renderLiteratureCard(l);});
+  return h;
+}
+
+function litPageName(section){return 'lit_'+section;}
+
+// ═══════════════════════════════════════
+// ADD STEP (四格漫畫)
+// ═══════════════════════════════════════
+function openStepModal(){
+  document.getElementById('smTitle').value='';
+  document.getElementById('smFixed').value='';document.getElementById('smVar').value='';
+  document.getElementById('smDetect').value='';document.getElementById('smBench').value='';
+  // Populate skill chips
+  dbGetAll('skills').then(function(skills){
+    var h='';
+    skills.forEach(function(s){
+      h+=`<label style="font-size:9px;cursor:pointer;padding:2px 6px;border:1px solid var(--bdr);border-radius:10px;background:var(--card);margin:0;display:inline-flex;align-items:center;gap:3px" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor='var(--bdr)'"><input type="checkbox" value="${s.id}" class="smSkillCb" style="margin:0;width:auto">${esc(s.name)}</label>`;
+    });
+    document.getElementById('smSkills').innerHTML=h||'<span style="font-size:9px;color:var(--muted)">No skills defined. Add via Skills template.</span>';
+  });
+  document.getElementById('stepModal').classList.add('show');
+}
+function closeStepModal(){document.getElementById('stepModal').classList.remove('show')}
+function comicLines(text){
+  if(!text.trim())return'';
+  return text.trim().split('\n').map(function(l){
+    var m=l.match(/^(.+?):\s*(.+)$/);
+    return m?'<b>'+esc(m[1])+':</b> '+esc(m[2]):esc(l);
+  }).join('<br>');
+}
+async function getNextStepNum(){
+  var steps=await getStepPages();
+  var maxN=0;
+  steps.forEach(function(s){
+    var m=(s.title||'').match(/^(\d+)\./);
+    if(m){var n=parseInt(m[1]);if(n>maxN)maxN=n;}
+  });
+  return maxN+1;
+}
+async function saveStep(){
+  var title=document.getElementById('smTitle').value.trim();
+  var fixed=comicLines(document.getElementById('smFixed').value);
+  var vr=comicLines(document.getElementById('smVar').value);
+  var detect=comicLines(document.getElementById('smDetect').value);
+  var bench=comicLines(document.getElementById('smBench').value);
+  if(!title){toast('Need a title','var(--red)');closeStepModal();return}
+  var nextNum=await getNextStepNum();
+  var pageTitle=nextNum+'. '+title;
+  var content='<div class="card"><h3>Step '+nextNum+' — '+esc(title)+'</h3>'
+    +'<div class="comic-grid">'
+    +'<div class="comic-panel"><div class="cp-num">①</div><div class="cp-title">Fixed Parameters</div><div class="cp-body">'+fixed+'</div></div>'
+    +'<div class="comic-panel"><div class="cp-num">②</div><div class="cp-title">Variable Parameters</div><div class="cp-body">'+vr+'</div></div>'
+    +'<div class="comic-panel"><div class="cp-num">③</div><div class="cp-title">Detection</div><div class="cp-body">'+detect+'</div></div>'
+    +'<div class="comic-panel"><div class="cp-num">④</div><div class="cp-title">Benchmark</div><div class="cp-body">'+bench+'</div></div>'
+    +'</div></div>';
+  var pid=getActiveProjectId();
+  try{
+    var id=await dbPut('pages',{section:'Experimental',title:pageTitle,content:content,projectId:pid,createdAt:new Date().toISOString()});
+    await syncResultsForStep(nextNum,pageTitle,pid);
+    // Create analysis entries for selected skills
+    var cbs=document.querySelectorAll('.smSkillCb:checked');
+    for(var i=0;i<cbs.length;i++){
+      var sid=parseInt(cbs[i].value);
+      var skill=await dbGet('skills',sid);
+      if(skill){
+        await dbPut('analyses',{
+          section:pageTitle,
+          title:(skill.name),
+          skillId:sid,skillName:skill.name,
+          param:'Step '+nextNum,
+          chartData:{},chartOptions:{},
+          chartType:skill.chartType,
+          keyParams:{},
+          summary:'Linked from Experimental step '+nextNum+'. Upload CSV data to process.',
+          csvRaw:'',
+          projectId:pid,
+          createdAt:new Date().toISOString()
+        });
+      }
+    }
+    var order=await getFlowOrder()||[];
+    if(order.indexOf(id)===-1)order.push(id);
+    await saveFlowOrder(order);
+    await buildSidebar();goPage('p_'+id);toast('Step '+nextNum+' added ✓'+(cbs.length?' + '+cbs.length+' analyses':''));
+  }catch(e){toast('Error: '+e.message,'var(--red)');}
+  closeStepModal();
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════
+async function refreshDashboard(){
+  const analyses=await dbGetAll('analyses'),apiKey=await dbGet('settings','api_key');
+  const de=document.getElementById('dbExpCount');if(de)de.textContent=analyses.length;
+  const dk1=document.getElementById('dbKPI1');if(dk1)dk1.textContent=analyses.length;
+  const dk2=document.getElementById('dbKPI2');if(dk2){dk2.textContent=apiKey?'🔑 Ready':'⚠️ Set key';dk2.style.color=apiKey?'var(--grn)':'var(--warn)'}
+  const rs=document.getElementById('recentSummary');if(rs)rs.innerHTML=analyses.length===0?'<i>No analyses yet. Go to a Results section → + Add Analysis.</i>':analyses.slice(-3).reverse().map(a=>`<div style="padding:4px 0;border-bottom:1px solid #eee"><b>🔬 ${esc(a.title)}</b> · ${esc(a.skillName)}<br><span style="color:var(--muted)">${esc(a.summary||'').slice(0,120)}</span></div>`).join('');
+  document.getElementById('dbStatus').textContent=`${analyses.length} analyses`;
+}
+
+// ═══════════════════════════════════════
+// API SETTINGS
+// ═══════════════════════════════════════
+async function loadApiSettings(){
+  const ep=await dbGet('settings','api_endpoint');if(ep)document.getElementById('apiEndpoint').value=ep.value;
+  const key=await dbGet('settings','api_key');if(key)document.getElementById('apiKey').value=key.value;
+  const model=await dbGet('settings','api_model');if(model)document.getElementById('apiModel').value=model.value;
+  const prompt=await dbGet('settings','system_prompt');if(prompt)document.getElementById('systemPrompt').value=prompt.value;
+}
+async function saveApiSettings(){
+  await dbPut('settings',{key:'api_endpoint',value:document.getElementById('apiEndpoint').value});
+  await dbPut('settings',{key:'api_model',value:document.getElementById('apiModel').value});
+  await dbPut('settings',{key:'system_prompt',value:document.getElementById('systemPrompt').value});
+  const kv=document.getElementById('apiKey').value;if(kv)await dbPut('settings',{key:'api_key',value:kv});
+  toast('Saved ✓');refreshDashboard();
+}
+function updateApiDefaults(){
+  document.getElementById('apiEndpoint').value=document.getElementById('apiProvider').value==='deepseek'?'https://api.deepseek.com/v1/chat/completions':'https://api.openai.com/v1/chat/completions';
+}
+async function testApiConnection(){
+  const ep=document.getElementById('apiEndpoint').value,key=document.getElementById('apiKey').value,model=document.getElementById('apiModel').value,div=document.getElementById('apiTestResult');
+  if(!key){div.innerHTML='<span style="color:var(--red)">❌ Enter key</span>';return}
+  div.innerHTML='<span style="color:var(--warn)">⏳ Testing...</span>';
+  try{const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model,messages:[{role:'user',content:'Say "ok"'}],max_tokens:10})});const d=await r.json();div.innerHTML=d.choices?'<span style="color:var(--grn)">✅ '+d.choices[0].message.content+'</span>':'<span style="color:var(--red)">❌ '+JSON.stringify(d).slice(0,200)+'</span>'}catch(e){div.innerHTML='<span style="color:var(--red)">❌ '+e.message+'</span>'}
+}
+
+// ═══════════════════════════════════════
+// AI CHAT
+// ═══════════════════════════════════════
+var chatHistory=[];
+async function sendChat(msg){
+  const input=document.getElementById('chatInput');const text=msg||(input?input.value.trim():'');if(!text)return;if(input)input.value='';
+  addChatMsg('user',text);chatHistory.push({role:'user',content:text});
+  const apiKey=await dbGet('settings','api_key');if(!apiKey){addChatMsg('agent','⚠️ Set API key first.');return}
+  const ep=(await dbGet('settings','api_endpoint'))?.value||'https://api.deepseek.com/v1/chat/completions';
+  const model=(await dbGet('settings','api_model'))?.value||'deepseek-chat';
+  const sysPrompt=(await dbGet('settings','system_prompt'))?.value||'You are Virgo.';
+  const analyses=await dbGetAll('analyses');
+  let ctx='';if(analyses.length>0)ctx+='\n\nAnalyses:\n'+analyses.map(function(a){return '#'+a.id+': '+a.title+' ('+a.skillName+')\n  '+(a.summary||'').slice(0,200);}).join('\n');
+  const thinking=addChatMsg('agent','⏳ Thinking...');
+  try{const r=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey.value},body:JSON.stringify({model,messages:[{role:'system',content:sysPrompt+ctx},...chatHistory.slice(-10)],max_tokens:1000,temperature:0.3})});const d=await r.json();thinking.remove();if(d.choices){const reply=d.choices[0].message.content;addChatMsg('agent',reply);chatHistory.push({role:'assistant',content:reply})}else{addChatMsg('agent','❌ '+JSON.stringify(d).slice(0,300))}}catch(e){thinking.remove();addChatMsg('agent','❌ '+e.message)}
+  const msgs=document.getElementById('chatMsgs');if(msgs)msgs.scrollTop=msgs.scrollHeight;
+}
+function addChatMsg(role,text){const d=document.createElement('div');d.className='chat-msg '+role;d.textContent=text;const m=document.getElementById('chatMsgs');if(m)m.appendChild(d);return d}
+
+// ═══════════════════════════════════════
+// DB MANAGEMENT
+// ═══════════════════════════════════════
+async function refreshDBStats(){
+  const pages=await dbGetAll('pages'),analyses=await dbGetAll('analyses'),chats=await dbGetAll('chat_history');
+  document.getElementById('dbStatsExp').textContent='—';document.getElementById('dbStatsPages').textContent=pages.length;document.getElementById('dbStatsAnalyses').textContent=analyses.length;
+  document.getElementById('dbStatsSize').textContent=(JSON.stringify({pages,analyses,chats}).length/1024).toFixed(1)+' KB';
+}
+async function exportAllJSON(){
+  const pages=await dbGetAll('pages'),analyses=await dbGetAll('analyses');
+  const settings=(await dbGetAll('settings')).filter(s=>s.key!=='api_key'),chats=await dbGetAll('chat_history');
+  const projects=await dbGetAll('projects'),skills=await dbGetAll('skills'),literature=await dbGetAll('literature');
+  const experiments=await dbGetAll('experiments');
+  const blob=new Blob([JSON.stringify({
+    version:2,exportedAt:new Date().toISOString(),
+    stores:{pages,analyses,settings,chat_history:chats,projects,skills,literature,experiments}
+  },null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='virgo_export_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('Exported ✓');
+}
+function importJSON(){document.getElementById('importFile').click()}
+async function handleImport(e){
+  try{
+    const t=await e.target.files[0].text();
+    const d=JSON.parse(t);
+    // P2: migration — handle older formats
+    var stores=d.stores||{pages:d.pages||[],analyses:d.analyses||[],settings:d.settings||[],chat_history:d.chat_history||[]};
+    if(!d.version||d.version<2){
+      // v0/v1: flat keys
+      stores.pages=d.pages||[];stores.analyses=d.analyses||[];
+    }
+    // P1: merge by id — update if exists, insert if new
+    var total=0;
+    const STORE_ORDER=['projects','settings','skills','pages','literature','analyses','experiments','chat_history'];
+    for(var sn of STORE_ORDER){
+      var records=stores[sn];
+      if(!records||!Array.isArray(records))continue;
+      for(var r of records){
+        if(r.id){
+          var existing=await dbGet(sn,r.id);
+          if(existing){
+            // Merge: keep existing fields that import doesn't override
+            var merged=Object.assign({},existing,r);
+            await dbPut(sn,merged);
+          }else{
+            await dbPut(sn,r);
+          }
+        }else{
+          await dbPut(sn,r);
+        }
+        total++;
+      }
+    }
+    toast('Imported: '+total+' records (merged)');
+    await buildSidebar();refreshDBStats();refreshDashboard();
+  }catch(ex){toast('Invalid JSON','var(--red)');console.error(ex)}
+}
+async function clearDatabase(){if(!confirm('⚠️ Delete ALL data?'))return;await dbClear('pages');await dbClear('analyses');await dbClear('chat_history');await dbClear('settings');toast('Cleared');buildSidebar();goPage('dashboard');refreshDBStats()}
+
+// ═══════════════════════════════════════
+// PRESENT MODE
+// ═══════════════════════════════════════
+var presenting=false,slideOrder=[],slideIdx=0;
+function togglePresent(){
+  presenting=!presenting;
+  document.body.classList.toggle('presenting',presenting);
+  document.querySelector('.present-btn').textContent=presenting?'◼ Exit':'▶ Present';
+  document.querySelector('.present-btn').classList.toggle('on',presenting);
+  if(presenting){
+    buildSlideOrder().then(()=>{
+      // Find current page in slide order (match by currentPage string)
+      var found=slideOrder.findIndex(function(s){return s.page===currentPage;});
+      slideIdx=found>=0?found:0;
+      updateSlideCounter();
+    });
+    document.addEventListener('keydown',pk);
+  }else{
+    document.removeEventListener('keydown',pk);
+  }
+}
+async function buildSlideOrder(){
+  var pid=activeProjectId;
+  // Collect content pages
+  var allP=await dbGetAll('pages')||[];
+  var projP=allP.filter(function(p){return p.projectId==null||p.projectId==pid});
+  var sections={};
+  for(var p of projP){if(!sections[p.section])sections[p.section]=[];sections[p.section].push(p);}
+  var order=['Purpose','Literature','Goals','Experimental','Results','Resources','Output'];
+  // Collect literature items
+  var allLit=await dbGetAll('literature')||[];
+  var projLit=allLit.filter(function(l){return l.projectId==null||l.projectId==pid});
+  var litBySection={};
+  for(var l of projLit){if(!litBySection[l.section])litBySection[l.section]=[];litBySection[l.section].push(l);}
+  slideOrder=[];
+  for(var sec of order){
+    if(sec==='Literature'){
+      // Literature section page
+      slideOrder.push({page:'sec_Literature',label:'📚 2. Literature'});
+      // Individual literature items
+      for(var s in litBySection){
+        var items=litBySection[s];
+        items.sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'')});
+        for(var l of items){slideOrder.push({page:'litdetail_'+l.id,label:l.title});}
+      }
+    }else if(sec==='Experimental'){
+      // Flowchart overview page
+      slideOrder.push({page:'sec_Experimental',label:'🧪 4. Experimental'});
+      // Individual step pages
+      var pgs=sections[sec];
+      if(pgs){
+        pgs.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+        for(var p of pgs){slideOrder.push({page:'p_'+p.id,label:p.title});}
+      }
+    }else if(sec==='Results'){
+      // Results step pages
+      var pgs=sections[sec];
+      if(pgs){
+        pgs.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+        for(var p of pgs){
+          slideOrder.push({page:'p_'+p.id,label:p.title});
+          // Individual analysis pages for this step
+          var stepTitle=(p.title||'').replace(/\s*Results\s*$/,'');
+          var allAnalyses=await dbGetAll('analyses')||[];
+          var stepAnalyses=allAnalyses.filter(function(a){
+            if(a.projectId!=null&&a.projectId!==pid)return false;
+            var aSec=(a.section||'').replace(/\s*Results\s*$/,'');
+            return aSec===stepTitle||aSec===(p.title||'')||(a.section||'')===(p.title||'')||(stepTitle&&(a.section||'')&&(a.section||'').indexOf(stepTitle)===0);
+          });
+          stepAnalyses.sort(function(a,b){return (b.createdAt||'').localeCompare(a.createdAt||'')});
+          for(var a of stepAnalyses){slideOrder.push({page:'a_'+a.id,label:'🔬 '+(a.title||'Analysis')});}
+        }
+      }
+    }else{
+      var pgs=sections[sec];
+      if(!pgs||pgs.length===0)continue;
+      pgs.sort(function(a,b){return (a.title||'').localeCompare(b.title||'')});
+      for(var p of pgs){slideOrder.push({page:'p_'+p.id,label:p.title});}
+    }
+  }
+  // Uncategorized pages
+  for(var sec in sections){
+    if(order.indexOf(sec)>=0)continue;
+    for(var p of sections[sec]){slideOrder.push({page:'p_'+p.id,label:p.title});}
+  }
+}
+function updateSlideCounter(){
+  var el=document.getElementById('slideCounter');
+  if(el)el.textContent=(slideIdx+1)+' / '+slideOrder.length;
+}
+function pk(e){
+  if(e.key==='Escape'){togglePresent();return;}
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+    e.preventDefault();
+    var dir=e.key==='ArrowRight'?1:-1;
+    var next=slideIdx+dir;
+    if(next>=0&&next<slideOrder.length){
+      slideIdx=next;
+      goPage(slideOrder[slideIdx].page);
+      updateSlideCounter();
+    }
+  }
+}
+function toast(msg,color){const t=document.createElement('div');t.className='toast';t.style.background=color||'var(--grn)';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+(async function(){
+  try{
+  await openDB();
+  // P0: check if recovery needed
+  var pages=await dbGetAll('pages');
+  if(pages.length===0){
+    var recovered=await recoverFromMirror();
+    if(recovered)document.getElementById('dbStatus').textContent='Restored';
+  }
+  await seedAll();await loadActiveProject();await buildSidebar();await goPage('dashboard');
+  document.getElementById('dbStatus').textContent='Ready';
+  }catch(e){document.getElementById('sidebarNav').innerHTML='<div style="padding:16px;color:var(--red);font-size:10px">Error: '+String(e.message).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div>';console.error(e)}
+  document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',function(e){if(e.target===this){this.classList.remove('show')}})});
+})();
+</script>
+</body>
