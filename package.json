@@ -1,8 +1,12 @@
 {
   "name": "virgo-agent",
   "version": "1.0.0",
-  "private": true,
+  "description": "Virgo Agent — AI Research Notebook",
+  "main": "index.js",
   "scripts": {
-    "build": "echo 'Static site — no build required'"
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }
