@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Virgo Demo Setup</title>
+<style>body{font-family:Georgia,serif;max-width:600px;margin:40px auto;line-height:1.8}
+h2{color:#2c5f8a}.ok{color:#2a7d4f}.err{color:#b33}</style></head>
+<body>
+<h2>🧪 Virgo Demo Setup — AEMWE-NiMo-MW</h2>
+<div id="log"></div>
+<script>
+const DB='virgo_agent',VER=5;
+function log(msg,c){document.getElementById('log').innerHTML+='<div class="'+(c||'')+'">'+msg+'</div>'}
+
+async function run(){
+  log('Opening IndexedDB...');
+  var db=await new Promise((r,j)=>{
+    var req=indexedDB.open(DB,VER);
+    req.onupgradeneeded=function(e){
+      var d=e.target.result;
+      var stores=[{n:'experiments',k:'id'},{n:'settings',k:'key'},{n:'chat_history',k:'id'},{n:'pages',k:'id'},{n:'skills',k:'id'},{n:'analyses',k:'id'},{n:'projects',k:'id'},{n:'literature',k:'id'}];
+      for(var s of stores){if(!d.objectStoreNames.contains(s.n))d.createObjectStore(s.n,{keyPath:s.k,autoIncrement:s.k==='id'})}
+    };
+    req.onsuccess=e=>r(e.target.result);
+    req.onerror=e=>j(e.target.error)
+  });
+  log('✅ DB opened','ok');
+
+  var tx=db.transaction(['projects','settings','pages','literature'],'readwrite');
+  var prjStore=tx.objectStore('projects'),setStore=tx.objectStore('settings'),pgStore=tx.objectStore('pages'),litStore=tx.objectStore('literature');
+
+  // Create project
+  var prjReq=prjStore.put({name:'AEMWE-NiMo-MW',createdAt:new Date().toISOString()});
+  var pid=await new Promise(r=>{prjReq.onsuccess=e=>r(e.target.result)});
+  log('✅ Project #'+pid+' created','ok');
+  setStore.put({key:'activeProjectId',value:pid});
+
+  // Purpose page
+  pgStore.put({section:'Purpose',title:'1. Purpose',projectId:pid,
+    content:'<div class="card"><h3>Project Purpose</h3><p style="font-size:11px;line-height:1.8"><b>Develop self-supporting porous NiMo alloy electrodes via microwave kiln sintering</b> as high-performance cathodes for AEMWE.<br><br><b>Innovation:</b> Replace tube furnace (hours) with <b>microwave kiln rapid sintering</b> (minutes, SiC susceptor). Ni+Mo+Mg powder metallurgy — Mg space-holder creates porosity.<br><br><b>Target:</b> HER cathode, 1 M KOH 60–80°C, >500 mA/cm² at <200 mV overpotential.</p></div>',
+    createdAt:new Date().toISOString()});
+
+  // Literature PAGES — category headers only
+  pgStore.put({section:'Literature',title:'2.1 Microwave Sintering of Electrodes',projectId:pid,
+    content:'<div class="card"><h3>2.1 Microwave Sintering of Electrodes</h3><p style="font-size:10px;color:var(--muted)">Papers on microwave-assisted fabrication of porous metal electrodes.</p></div>',
+    createdAt:new Date().toISOString()});
+  pgStore.put({section:'Literature',title:'2.2 NiMo Catalysts for HER',projectId:pid,
+    content:'<div class="card"><h3>2.2 NiMo Catalysts for HER</h3><p style="font-size:10px;color:var(--muted)">Papers on NiMo alloy catalysts for hydrogen evolution.</p></div>',
+    createdAt:new Date().toISOString()});
+  pgStore.put({section:'Literature',title:'2.3 AEMWE Cell Performance',projectId:pid,
+    content:'<div class="card"><h3>2.3 AEMWE Cell Performance</h3><p style="font-size:10px;color:var(--muted)">Papers on AEMWE single-cell testing and durability.</p></div>',
+    createdAt:new Date().toISOString()});
+  log('✅ Literature category pages: 3','ok');
+
+  // Literature ITEMS — actual papers in literature table
+  var papers=[
+    {title:'Powder metallurgy synthesis of porous NiMo alloys as efficient electrocatalysts to enhance the hydrogen evolution reaction',authors:'Xu et al.',journal:'Journal of Alloys and Compounds',year:'2021',doi:'10.1016/j.jallcom.2021.159308',notes:'Self-supporting porous NiMo alloys prepared by powder metallurgy + <b>microwave sintering</b> at 900°C with SiC susceptor. Mixed Ni, Mo, Mg powders ball-milled. Mg space-holder creates porosity. <b>HER overpotential ~85 mV at 10 mA/cm²</b> in 1 M KOH. Tafel slope ~68 mV/dec. Microwave enables rapid heating (50–100°C/min). Key for our project: demonstrates feasibility of microwave-sintered porous NiMo.'},
+    {title:'An oxide-promoted, self-supported Ni₄Mo catalyst for high current density AEMWE',authors:'Energy Environ. Sci.',journal:'Energy & Environmental Science',year:'2024',doi:'10.1039/D4EE04528A',notes:'Electrodeposited self-supported Ni₄Mo–MoOₓ on Ni foam. <b>1.0 A/cm² at 1.78 V</b> in AEMWE (1 M KOH, 60°C). MoOₓ promotes water dissociation; Ni₄Mo provides optimal H adsorption. <b>Stable >100 h at 500 mA/cm²</b>. Benchmark: PGM-free AEMWE cathode performance.'},
+    {title:'Nanowire-template-assisted NiMo catalyst for efficient hydrogen evolution in AEMWE',authors:'Appl. Surf. Sci.',journal:'Applied Surface Science',year:'2025',doi:'10.1016/j.apsusc.2025.162556',notes:'NiMo/Co-NW/CP cathode: η₁₀ = 32 mV. AEMWE single cell: <b>1.0 A/cm² at 1.82 V</b>. Two-step electrodeposition on Co nanowire template. Demonstrates importance of high surface area morphology.'},
+    {title:'Microwave-plasma-processed self-catalyzed stainless steel fiber paper PTL for AEMWE',authors:'J. Power Sources',journal:'Journal of Power Sources',year:'2025',doi:'10.1016/j.jpowsour.2025.236571',notes:'Microwave plasma treatment of SS fiber paper as self-catalyzed PTL. <b>1.0 A/cm² at 1.80 V, 70°C</b>. Shows microwave processing advantage for electrode fabrication.'},
+    {title:'Recent progress on synthesis and electrocatalytic applications of Ni-based catalysts',authors:'Nanoscale Review',journal:'Nanoscale',year:'2026',doi:'10.1039/D5NR05514H',notes:'Comprehensive review. Highlights <b>microwave sintering as emerging route</b> for self-supporting porous NiMo. <b>Mo >15 at% yields amorphous/nanocrystalline phases</b> beneficial for HER. Porosity >40% needed for high current density. Key reference for parameter optimization.'},
+    {title:'Degradation of NiMo Catalyst Under Intermittent Operation of AEMWE',authors:'Adv. Energy Mater.',journal:'Advanced Energy Materials',year:'2025',doi:'10.1002/aenm.202501800',notes:'NiMo catalysts with defective carbon shell encapsulation. Degradation study under intermittent (renewable) operation. Carbon shell improves durability — relevant for our electrode design.'},
+    {title:'High performance AEMWE driven by atomic scale synergy of non-precious high entropy catalysts',authors:'Energy Mater.',journal:'Energy Materials',year:'2025',doi:'10.20517/energymater.2025.5',notes:'Microwave synthesis of high entropy oxide/alloy catalysts. AEMWE: 500 mA/cm², 0.014% decay over 100 h. Demonstrates microwave method scalability for electrocatalyst production.'}
+  ];
+  for(var p of papers){
+    litStore.put({title:p.title,authors:p.authors,journal:p.journal,year:p.year,doi:p.doi,notes:p.notes,createdAt:new Date().toISOString()});
+  }
+  log('✅ Literature items: '+papers.length+' papers','ok');
+
+  // Goals
+  pgStore.put({section:'Goals',title:'3. Goals',projectId:pid,
+    content:'<div class="card"><h3>Project Goals</h3><table class="data-tbl"><tr><th>#</th><th>Goal</th><th>Status</th></tr><tr><td>1</td><td>Optimize microwave sintering parameters for NiMo electrode</td><td>⬜ Pending</td></tr><tr><td>2</td><td>Characterize HER performance (LSV, EIS, Tafel)</td><td>⬜ Pending</td></tr><tr><td>3</td><td>AEMWE single-cell test with optimized cathode</td><td>⬜ Pending</td></tr></table></div>',
+    createdAt:new Date().toISOString()});
+  log('✅ Goals page created','ok');
+
+  // Placeholder sections
+  for(var s of [['Results','5.1 Results'],['Resources','6.1 Resources'],['Output','7.1 Deliverable']]){
+    pgStore.put({section:s[0],title:s[1],projectId:pid,content:'<div class="card"><h3>'+s[0]+'</h3><p style="font-size:10px;color:var(--muted)">Generated after AI planning.</p></div>',createdAt:new Date().toISOString()});
+  }
+  log('✅ Placeholder sections created','ok');
+
+  await new Promise(r=>{tx.oncomplete=r});
+  log('<br><b>Done!</b> Now open <a href="virgo_mvp.html">virgo_mvp.html</a> → AEMWE-NiMo-MW → 3. Goals → 🤖 AI Generate','ok');
+}
+run().catch(e=>log('❌ Error: '+e.message,'err'));
+</script>
+</body></html>
