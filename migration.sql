@@ -58,3 +58,10 @@ CREATE POLICY "Users can CRUD own plots" ON plots
     FOR ALL USING (
         auth.uid() = (SELECT owner_id FROM projects WHERE id = project_id)
     );
+
+-- 授權 service_role（繞過 RLS 給後端 API 用）
+GRANT ALL ON users TO service_role;
+GRANT ALL ON api_keys TO service_role;
+GRANT ALL ON projects TO service_role;
+GRANT ALL ON plots TO service_role;
+GRANT USAGE ON SCHEMA public TO service_role;
