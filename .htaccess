@@ -1,2 +1,4 @@
 DirectoryIndex landing.html
+RewriteEngine On
+RewriteRule ^login/$ /login.html [L]
 Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://mtshudmynuedafqixbvj.supabase.co; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self' https://mtshudmynuedafqixbvj.supabase.co https://api.crossref.org; font-src 'self' https://cdn.jsdelivr.net;"
