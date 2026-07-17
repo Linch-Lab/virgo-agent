@@ -814,7 +814,7 @@ body.presenting .present-hint { display: block; }
   <div class="status-right">
     <span style="display:flex;align-items:center;gap:4px"><span class="auth-dot offline" id="authDot"></span><span id="authLabel">Offline</span></span>
     <span id="statusSync">💾 Saved</span>
-    <button onclick="showAuthModal()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:1px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font)">🔑 Sign In</button>
+    <button id="authBtn" onclick="handleAuthClick()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:1px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font)">🔑 Sign In</button>
   </div>
 </div>
 
@@ -1028,6 +1028,18 @@ async function showAuthModal() {
   document.getElementById('authModal').classList.add('show');
 }
 window.showAuthModal = showAuthModal;
+function handleAuthClick() {
+  if (authUser) {
+    // Logout
+    if (supabase) supabase.auth.signOut();
+    authUser = null;
+    updateAuthStatus();
+    toast('Signed out');
+  } else {
+    showAuthModal();
+  }
+}
+window.handleAuthClick = handleAuthClick;
 function closeAuthModal() { document.getElementById('authModal').classList.remove('show'); }
 window.closeAuthModal = closeAuthModal;
 function switchAuthTab(tab) {
@@ -1079,12 +1091,15 @@ async function tryRestoreSession() {
 function updateAuthStatus() {
   const dot = document.getElementById('authDot');
   const label = document.getElementById('authLabel');
+  const btn = document.getElementById('authBtn');
   if (authUser) {
     dot.className = 'auth-dot';
     label.textContent = authUser.email || 'Signed In';
+    if (btn) btn.textContent = '⏻ Logout';
   } else {
     dot.className = 'auth-dot offline';
     label.textContent = 'Offline';
+    if (btn) btn.textContent = '🔑 Sign In';
   }
 }
 
