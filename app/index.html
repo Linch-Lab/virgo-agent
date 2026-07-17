@@ -2283,97 +2283,64 @@ async function seedDemoData() {
   if (existingSteps.length > 0) { console.log('seedDemoData: steps already exist, skipping'); return; }
   console.log('seedDemoData: seeding...');
 
-  // ISSUE content
-  const issueText = `# HT-PEMFC Graphite-Coated Ni Foam Bipolar Plates
+  // ISSUE content — AEMWE Stack
+  const issueText = `# AEMWE 陰離子交換膜水電解堆疊效能優化
 
-## Problem Statement
+## 研究瓶頸
 
-High-temperature proton exchange membrane fuel cells (HT-PEMFC, 160–180 °C) face a critical **bipolar plate corrosion** bottleneck:
+### 1. AEM 化學穩定性不足
+季銨基在 OH⁻ 攻擊下發生 **Hofmann elimination**，導致離子導電率在 1000h 內衰減 30-50%。
+最先進解法：無醚鍵聚芳烴哌啶骨架（PFAP），80°C 1M KOH 中 >5000h。
 
-- **Ni foam** offers low cost, high conductivity, and easy formability — but **corrodes severely** in hot phosphoric acid
-- **Graphite plates** resist corrosion but are **expensive to machine** and **brittle**
-- **Stainless steel** plates form passive oxide layers that increase contact resistance
+### 2. Ionomer 與觸媒層界面
+最優化 ionomer 含量 **10-15 wt%**。過多覆蓋活性位點，過少離子傳導不足。
+階梯式 ionomer 塗層可降低界面阻抗 40%。
 
-### Research Question
+### 3. PGM-Free 催化劑穩定性
+NiFe-LDH OER 過電位 ~240mV。初期表面重構導致快速衰減，**預穩定化處理**可緩解。
 
-Can **APCVD graphite coating on Ni foam** serve as a corrosion-resistant, conductive bipolar plate for HT-PEMFC?
+### 4. 界面接觸阻抗與分層
+膜-觸媒層介面阻抗 30-80 mΩ·cm²。脹縮率 10-30% 導致機械分層。**MPL 引入**可降至 <15。
 
-### Hypothesis
+### 5. 純水操作
+Guo et al. (2026, Nat. Commun.) 局部鹼性策略實現純水 AEMWE **2.5 A/cm² @ 2.0V**。
 
-A thin, conformal graphite layer deposited via APCVD will:
-1. Act as a physical barrier against $H_3PO_4$ attack
-2. Maintain electrical conductivity through graphitic carbon
-3. Preserve the mechanical flexibility and low cost of Ni foam
-
-### Key Equation
-
-The Tuinstra-Koenig relation for graphitic crystallite size:
-
-$$L_a = (2.4 \\times 10^{-10}) \\times \\lambda^4 \\times \\left(\\frac{I_D}{I_G}\\right)^{-1}$$`;
+## 優化方向
+- 膜：聚芳烴哌啶 + 長側鏈 QA
+- Ionomer：低苯基 polyolefin
+- 觸媒：NiFe-LDH/NiMo + 預穩定化
+- 介面：MPL + 熱壓
+- 操作：KOH 濃度梯度`;
 
   await dbPut('settings', { key: 'phase_issue', value: issueText });
 
-  // Literature
-  await dbPut('literature', {
-    title: 'Graphite-Coated Ni Foam Bipolar Plates for HT-PEMFC',
-    authors: 'Chen, L., Wang, Y., et al.',
-    journal: 'Int. J. Hydrogen Energy',
-    year: '2024',
-    doi: '10.1016/j.ijhydene.2024.01.123',
-    notes: 'Key findings: APCVD at 970°C yields optimal graphitization (ID/IG=0.42). Corrosion current reduction: −58% vs bare Ni (2.10→0.88 μA/cm²). Single-cell: 763 mA/cm² @ 0.6V. Durability: 0.25 mV/h over 200h.',
-    createdAt: new Date().toISOString(),
-  });
-  await dbPut('literature', {
-    title: 'Carbon-Coated Metallic Bipolar Plates for PEMFC',
-    authors: 'Kim, S., Park, J., et al.',
-    journal: 'J. Power Sources',
-    year: '2023',
-    doi: '10.1016/j.jpowsour.2023.232456',
-    notes: 'CVD carbon coating reduces ICR by 40% vs uncoated SS316L. Corrosion <1 μA/cm² in simulated PEMFC. Ni foam + graphite combines low cost + corrosion resistance.',
-    createdAt: new Date().toISOString(),
-  });
+  // Literature — AEMWE
+  await dbPut('literature', {title:'High-Performance AEMWE',authors:'Chen P, Hu X et al.',journal:'Energy Environ. Sci.',year:'2021',doi:'10.1039/D1EE01234K',notes:'7.68 A/cm² @ 2.0V, 1000h。PFAP 膜 + NiFe 觸媒。406 引用。',createdAt:new Date().toISOString()});
+  await dbPut('literature', {title:'Ni₄Mo Self-Supported Catalysts',authors:'Serban D, Wang L et al.',journal:'Energy Environ. Sci.',year:'2024',doi:'10.1039/D4EE01234K',notes:'自支撐 Ni₄Mo 電極。無需 binder。過電位僅 45mV @ 10mA/cm²。',createdAt:new Date().toISOString()});
+  await dbPut('literature', {title:'Pure-Water AEMWE via Local Alkaline Strategy',authors:'Guo W, Zhang J et al.',journal:'Nat. Commun.',year:'2026',doi:'10.1038/s41467-026-40123',notes:'局部鹼性策略。2.5 A/cm² @ 2.0V。無需液態 KOH 循環。',createdAt:new Date().toISOString()});
+  await dbPut('literature', {title:'Ionomer-Catalyst Interface Engineering',authors:'Kim YS, Park JE et al.',journal:'J. Electrochem. Soc.',year:'2022',doi:'10.1149/1945-7111/ac8765',notes:'最優 ionomer 15 wt%。階梯式塗層降低界面阻抗 40%。',createdAt:new Date().toISOString()});
+  await dbPut('literature', {title:'Stack-Level Durability: 10-Cell AEMWE',authors:'Miller HA, Vizza F et al.',journal:'J. Power Sources',year:'2025',doi:'10.1016/j.jpowsour.2025.230123',notes:'10-cell 100cm² 電堆。2000h 1A/cm²。衰減率 15 μV/h。FE >99%。',createdAt:new Date().toISOString()});
   window._litCache = await _dbGetAll('literature') || [];
 
-  // Goals
-  await dbPut('goals', { goalNumber: 1, description: 'CVD temperature optimization (850–1050°C)', kpi: 'ID/IG ≤ 0.5', status: 'Achieved', createdAt: new Date().toISOString() });
-  await dbPut('goals', { goalNumber: 2, description: 'Uniform coating coverage', kpi: 'Thickness 1.5–2.0 μm', status: 'Achieved', createdAt: new Date().toISOString() });
-  await dbPut('goals', { goalNumber: 3, description: 'Corrosion suppression', kpi: 'icorr reduction > 50%', status: 'Achieved', createdAt: new Date().toISOString() });
+  // Goals — AEMWE
+  await dbPut('goals', {goalNumber:1,description:'提升 2.0V 電流密度至 >3.0 A/cm²',kpi:'>3.0 A/cm² @ 2.0V, 60°C',status:'In Progress',createdAt:new Date().toISOString()});
+  await dbPut('goals', {goalNumber:2,description:'降低長期衰減率至 <5 μV/h',kpi:'<5 μV/h (2000h)',status:'In Progress',createdAt:new Date().toISOString()});
+  await dbPut('goals', {goalNumber:3,description:'最適化 Ionomer 含量',kpi:'Interface R <15 mΩ·cm²',status:'In Progress',createdAt:new Date().toISOString()});
+  await dbPut('goals', {goalNumber:4,description:'達成純水 AEMWE 操作',kpi:'Pure water: >1.5 A/cm² @ 2.0V',status:'In Progress',createdAt:new Date().toISOString()});
   window._goalCache = await _dbGetAll('goals') || [];
 
-  // Experimental Steps
-  const step1 = await dbPut('steps', {
-    stepNumber: 1,
-    title: 'APCVD Graphite Coating',
-    fixedParams: '<b>Substrate:</b> Ni foam (1.6 mm, 95% porosity)<br><b>Precursor:</b> CH₄ (99.9%)<br><b>Carrier gas:</b> Ar (99.999%)<br><b>Pressure:</b> Atmospheric<br><b>Reactor:</b> Horizontal quartz tube furnace<br><b>Deposition time:</b> 30 min',
-    varParams: '<b>Temperature:</b> 850 / 900 / 950 / 970 / 1000 / 1050 °C<br><b>Gas flow ratio:</b> CH₄:Ar = 1:4<br><br><i>970 °C selected as optimum — balances graphitization with uniformity.</i>',
-    detection: '<b>SEM</b> — surface morphology & coverage<br><b>Raman</b> — ID/IG ratio (defect density)<br><b>Cross-section SEM</b> — coating thickness<br><b>XRD</b> — crystallinity & phase',
-    benchmark: '<b>ID/IG ≤ 0.5</b> — sufficient graphitization<br><b>Thickness 1.5–2.0 μm</b> — uniform coverage<br><b>No exposed Ni</b> — full coverage in SEM<br><br>✅ <b>Result:</b> ID/IG = 0.42, thickness = 1.65 μm @ 970 °C',
-    linkedSkills: 'EIS-NyquistBode, Raman-Carbon, XRD-Analysis',
-    status: 'completed',
-    nextAction: 'proceed',
-    createdAt: new Date().toISOString(),
-  });
-
-  const step2 = await dbPut('steps', {
-    stepNumber: 2,
-    title: 'Corrosion Test (H₃PO₄)',
-    fixedParams: '<b>Electrolyte:</b> H₃PO₄ (pH 3, 0.5 M)<br><b>Temperature:</b> 150 °C<br><b>Cell:</b> 3-electrode (Pt counter, Ag/AgCl ref.)<br><b>Scan rate:</b> 1 mV/s<br><b>Pre-immersion:</b> 24 h',
-    varParams: '<b>Sample type:</b> Bare Ni foam vs. Graphite/Ni foam<br><b>Coating temperature:</b> 970 °C (optimal from Step 1)',
-    detection: '<b>Potentiodynamic polarization</b> — icorr, Ecorr<br><b>EIS</b> — Rohm, Rct (charge transfer resistance)<br><b>Post-mortem SEM</b> — surface degradation',
-    benchmark: '<b>icorr reduction > 50%</b> vs bare Ni<br><b>Rct increase > 2×</b> — higher corrosion resistance<br><b>No visible pitting</b> — post-test SEM<br><br>✅ <b>Result:</b> icorr −58% (2.10→0.88 μA/cm²), Rct 2.4×',
-    linkedSkills: 'EIS-NyquistBode, LSV-Tafel',
-    status: 'completed',
-    nextAction: 'proceed',
-    createdAt: new Date().toISOString(),
-  });
-
+  // Experimental Steps — AEMWE
+  const step1 = await dbPut('steps', {stepNumber:1,title:'Step 1: 觸媒合成與篩選',fixedParams:'<b>NiFe-LDH:</b> 水熱法 120°C, 12h<br><b>NiMo:</b> 電沉積 50 mA/cm²<br><b>基準:</b> IrO₂/Pt',varParams:'<b>NiFe 比例:</b> 3:1 / 5:1 / 7:1<br><b>NiMo 比例:</b> 1:1 / 2:1 / 3:1<br><b>預穩定化:</b> 有/無',detection:'<b>LSV/OER</b> — 1M KOH<br><b>XRD</b> — 晶相分析<br><b>SEM/EDS</b> — 形貌<br><b>ICP-MS</b> — 金屬溶出',benchmark:'<b>η_OER < 250mV</b> @ 10 mA/cm²<br><b>η_HER < 80mV</b> @ 10 mA/cm²<br><b>溶出速率 < 0.01 μg/cm²/h</b><br>✅ Result: NiFe(5:1)+NiMo(2:1) optimal',linkedSkills:'EIS-NyquistBode, LSV-Tafel, CyclicVoltammetry',status:'completed',nextAction:'proceed',createdAt:new Date().toISOString()});
+  const step2 = await dbPut('steps', {stepNumber:2,title:'Step 2: Ionomer 含量最適化',fixedParams:'<b>膜:</b> PFAP (50 μm)<br><b>陽極:</b> NiFe(5:1) 2 mg/cm²<br><b>陰極:</b> NiMo(2:1) 2 mg/cm²',varParams:'<b>Ionomer:</b> 7 / 10 / 15 / 20 / 25 wt%<br><b>塗層:</b> 均勻 / 階梯式',detection:'<b>IV 曲線</b> — 1M KOH, 60°C<br><b>EIS</b> — 100kHz-0.1Hz<br><b>截面 SEM</b> — ionomer 分布',benchmark:'<b>i @ 2.0V > 2.0 A/cm²</b><br><b>R_ohm < 0.08 Ω cm²</b><br><b>ECSA 保留 > 80%</b><br>✅ Result: 15 wt% step-gradient optimal',linkedSkills:'EIS-NyquistBode',status:'completed',nextAction:'proceed',createdAt:new Date().toISOString()});
+  const step3 = await dbPut('steps', {stepNumber:3,title:'Step 3: 溫度與壓力最適化',fixedParams:'<b>最優觸媒 + ionomer</b><br><b>PFAP 膜</b>',varParams:'<b>溫度:</b> 40/50/60/70/80°C<br><b>背壓:</b> 0/1/2/3/5 bar<br><b>KOH:</b> 0.1/0.5/1.0 M',detection:'<b>IV + EIS</b><br><b>H₂ 產量</b> — 線上流量計<br><b>H₂ crossover</b> — GC',benchmark:'<b>i @ 2.0V > 3.0 A/cm²</b><br><b>FE > 99%</b><br><b>H₂ crossover < 0.5%</b>',linkedSkills:'EIS-NyquistBode, GasPermeationAnalysis',status:'in_progress',nextAction:'pending',createdAt:new Date().toISOString()});
+  const step4 = await dbPut('steps', {stepNumber:4,title:'Step 4: 長時間穩定性測試',fixedParams:'<b>最優條件</b> (from Steps 1-3)<br><b>恆流:</b> 1.0 A/cm²',varParams:'<b>時間:</b> 500/1000/2000/5000h<br><b>純水 vs 1M KOH</b>',detection:'<b>每 200h:</b> IV + EIS<br><b>產物純度</b> — GC<br><b>Post-mortem</b> — SEM/XRD/XPS',benchmark:'<b>衰減率 < 5 μV/h</b><br><b>5000h 保留 > 85%</b><br><b>膜導電度 > 90%</b>',linkedSkills:'EIS-NyquistBode, LongTermDurability',status:'pending',nextAction:'pending',createdAt:new Date().toISOString()});
   window._stepCache = await _dbGetAll('steps') || [];
   activeStepId = step1;
 
-  // Param matrix defaults
-  await dbPut('param_matrix', { row: 1, sampleName: 'Ni-850', param1: '850', param2: '30', param3: '1:4', dataFiles: '' });
-  await dbPut('param_matrix', { row: 2, sampleName: 'Ni-900', param1: '900', param2: '30', param3: '1:4', dataFiles: '' });
-  await dbPut('param_matrix', { row: 3, sampleName: 'Ni-970', param1: '970', param2: '30', param3: '1:4', dataFiles: '' });
+  // Param matrix — AEMWE
+  await dbPut('param_matrix', {row:1,sampleName:'NiFe31-NiMo11',param1:'3:1',param2:'1:1',param3:'15%',dataFiles:''});
+  await dbPut('param_matrix', {row:2,sampleName:'NiFe51-NiMo21',param1:'5:1',param2:'2:1',param3:'15%',dataFiles:''});
+  await dbPut('param_matrix', {row:3,sampleName:'NiFe51-NiMo21-I10',param1:'5:1',param2:'2:1',param3:'10%',dataFiles:''});
 
   // Unlock phases
   unlockedPhase = 5; // all unlocked for demo
