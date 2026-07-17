@@ -2489,10 +2489,13 @@ window.switchPhase = switchPhase;
 
 // ═══════ Init ═══════
 async function init() {
+  const d = document.getElementById('diag');
+  if (d) d.textContent = '⏳ JS started, initializing...';
   const dbg = document.getElementById('debugBanner');
   try {
   if (dbg) dbg.remove();
   await openDB();
+  if (d) d.textContent = '⏳ DB opened, restoring session...';
   await recoverFromMirror();
   await tryRestoreSession();
   updateAuthStatus();
@@ -2524,13 +2527,14 @@ async function init() {
   await refreshResultsPhase();
   await refreshPaperPhase();
 
-  // If not signed in, auto-login whitelisted user
+  // Show auth modal if not signed in
   if (!authUser) {
-    authUser = { email: ALLOWED_EMAILS[0] };
-    updateAuthStatus();
-    console.log('Auto-logged in as', authUser.email);
+    setTimeout(() => {
+      if (!authUser) showAuthModal();
+    }, 800);
   }
 
+  if (d) d.textContent = '✅ Ready — Virgo Agent v3';
   document.getElementById('statusSync').textContent = '💾 Ready';
   console.log('Virgo Agent v3 initialized ✓');
   } catch(e) {
