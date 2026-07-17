@@ -2280,8 +2280,10 @@ async function buildSidebar() {
 
 // ═══════ Seed Demo Data ═══════
 async function seedDemoData() {
+  try {
   const existingSteps = await _dbGetAll('steps') || [];
-  if (existingSteps.length > 0) return;
+  if (existingSteps.length > 0) { console.log('seedDemoData: steps already exist, skipping'); return; }
+  console.log('seedDemoData: seeding...');
 
   // ISSUE content
   const issueText = `# HT-PEMFC Graphite-Coated Ni Foam Bipolar Plates
@@ -2380,6 +2382,11 @@ $$L_a = (2.4 \\times 10^{-10}) \\times \\lambda^4 \\times \\left(\\frac{I_D}{I_G
   document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('locked'));
 
   console.log('Demo data seeded ✓');
+  } catch(e) {
+    console.error('seedDemoData FAILED:', e.message, e.stack);
+    document.getElementById('debugBanner').innerHTML += '<br>seedDemoData error: ' + e.message;
+    document.getElementById('debugBanner').style.display = 'block';
+  }
 }
 
 // ═══════ Helpers ═══════
@@ -2409,6 +2416,7 @@ window.switchPhase = switchPhase;
 // ═══════ Init ═══════
 async function init() {
   const dbg = document.getElementById('debugBanner');
+  try {
   if (dbg) dbg.remove();
   await openDB();
   await recoverFromMirror();
@@ -2451,6 +2459,10 @@ async function init() {
 
   document.getElementById('statusSync').textContent = '💾 Ready';
   console.log('Virgo Agent v3 initialized ✓');
+  } catch(e) {
+    console.error('init FAILED:', e.message, e.stack);
+    if (dbg) { dbg.innerHTML += '<br>init error: ' + e.message; dbg.style.display = 'block'; }
+  }
 }
 
 init().catch(err => {
