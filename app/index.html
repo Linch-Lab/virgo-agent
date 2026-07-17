@@ -645,10 +645,6 @@ body.presenting .present-hint { display: block; }
 </style>
 </head>
 <body>
-<div id="debugBanner" style="background:#f85149;color:#fff;padding:12px 24px;font-family:monospace;font-size:12px;z-index:9999;position:relative;">
-  ⚠ DEBUG: init() has NOT run yet. If you see this, JS failed to load.
-  <br>Check browser console (F12) for errors.
-</div>
 
 <!-- ═══════ App Shell ═══════ -->
 <div class="app-shell">
@@ -2272,7 +2268,7 @@ async function buildSidebar() {
   PHASES.forEach((phase, i) => {
     const locked = i > unlockedPhase ? ' locked' : '';
     const active = phase === activePhase ? ' active' : '';
-    const labels = { issue: 'Research Issue', literature: 'Literature Review', goals: 'Goals & KPIs', experimental: 'Experiments', results: 'Results', paper: 'Manuscript Draft' };
+    const labels = { issue: 'Research Issue', literature: 'Literature Review', references: 'References', goals: 'Goals & KPIs', experimental: 'Experiments', results: 'Results', paper: 'Manuscript Draft' };
     html += `<div class="tree-item${active}${locked ? '' : ''}" onclick="switchPhase('${phase}')" style="${locked ? 'color:#ccc;cursor:not-allowed' : ''}">📄 ${labels[phase]}</div>`;
   });
   tree.innerHTML = html;
