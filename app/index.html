@@ -990,10 +990,12 @@ function switchAuthTab(tab) {
   document.getElementById('authRegister').style.display = tab === 'register' ? '' : 'none';
 }
 window.switchAuthTab = switchAuthTab;
+const ALLOWED_EMAILS = ['satb03@gmail.com']; // email whitelist
 async function doLogin() {
   if (!supabase) { toast('Supabase not available', 'var(--red)'); return; }
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
+  if (!ALLOWED_EMAILS.includes(email)) { toast('Access restricted', 'var(--red)'); return; }
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -1008,6 +1010,7 @@ async function doRegister() {
   if (!supabase) { toast('Supabase not available', 'var(--red)'); return; }
   const email = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPassword').value;
+  if (!ALLOWED_EMAILS.includes(email)) { toast('Registration restricted', 'var(--red)'); return; }
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
