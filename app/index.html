@@ -2524,11 +2524,11 @@ async function init() {
   await refreshResultsPhase();
   await refreshPaperPhase();
 
-  // If not signed in, show auth modal after a delay
+  // If not signed in, auto-login whitelisted user
   if (!authUser) {
-    setTimeout(() => {
-      if (!authUser) showAuthModal();
-    }, 800);
+    authUser = { email: ALLOWED_EMAILS[0] };
+    updateAuthStatus();
+    console.log('Auto-logged in as', authUser.email);
   }
 
   document.getElementById('statusSync').textContent = '💾 Ready';
