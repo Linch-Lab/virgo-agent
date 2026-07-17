@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Virgo Agent v2 — AI Research Notebook</title>
+<title>Virgo Agent — AI Research Notebook</title>
 
 <!-- CDN Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -16,12 +16,10 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
-<!-- CodeMirror 6 loaded via direct esm.sh imports in module script below -->
-
 <style>
 /* ═══════════════════════════════════════════════
-   Virgo Agent v2 — Design System
-   JupyterLab-inspired 3-column layout
+   Virgo Agent — Design System
+   Three-column layout: Sidebar | Main | AI Panel
    ═══════════════════════════════════════════════ */
 :root {
   --bg: #fafbfc;
@@ -34,14 +32,12 @@
   --grn: #28a745;
   --warn: #f66a0a;
   --red: #d73a49;
-  --activity-w: 48px;
-  --sidebar-w: 240px;
-  --chat-w: 320px;
-  --status-h: 28px;
   --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
   --radius: 4px;
   --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --sidebar-w: 240px;
+  --chat-w: 320px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -51,13 +47,12 @@ body {
   background: var(--bg);
   color: var(--txt);
   height: 100vh;
-  width: 100vw;
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
-/* ═══════════ Layout Container ═══════════ */
+/* ═══════ App Shell ═══════ */
 .app-shell {
   display: flex;
   flex: 1;
@@ -65,52 +60,8 @@ body {
   position: relative;
 }
 
-/* ═══════════ Activity Bar (48px leftmost) ═══════════ */
-.activity-bar {
-  width: var(--activity-w);
-  min-width: var(--activity-w);
-  background: #2c2c2c;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 4px;
-  z-index: 20;
-  flex-shrink: 0;
-}
-
-.activity-btn {
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  cursor: pointer;
-  color: #8b949e;
-  position: relative;
-  transition: color 0.15s;
-  border: none;
-  background: none;
-}
-
-.activity-btn:hover { color: #e6edf3; }
-.activity-btn.active { color: #ffffff; }
-
-.activity-btn.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  background: var(--acc);
-  border-radius: 0 2px 2px 0;
-}
-
-.activity-spacer { flex: 1; }
-
-/* ═══════════ Left Sidebar (240px, collapsible) ═══════════ */
-.left-sidebar {
+/* ═══════ Left Sidebar ═══════ */
+.sidebar {
   width: var(--sidebar-w);
   min-width: 0;
   background: #ffffff;
@@ -118,58 +69,20 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width 0.2s ease, min-width 0.2s ease, opacity 0.2s ease;
   z-index: 10;
   flex-shrink: 0;
-}
-
-.left-sidebar.collapsed {
-  width: 0;
-  min-width: 0;
-  border-right: none;
-  opacity: 0;
-}
-
-.sidebar-section {
-  display: none;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
-
-.sidebar-section.active {
-  display: flex;
 }
 
 .sidebar-header {
   padding: 12px 16px;
   border-bottom: 1px solid var(--bdr);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--muted);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   flex-shrink: 0;
 }
-
-.sidebar-header .add-btn {
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--muted);
-  background: none;
-  border: none;
-  padding: 2px 6px;
-  border-radius: var(--radius);
-  line-height: 1;
-}
-
-.sidebar-header .add-btn:hover {
-  background: var(--bdr);
-  color: var(--txt);
-}
+.sidebar-header .logo { font-size: 14px; font-weight: 700; color: var(--acc); }
+.sidebar-header .badge { font-size: 9px; background: var(--grn); color: #fff; padding: 1px 6px; border-radius: 3px; }
 
 .sidebar-tree {
   flex: 1;
@@ -177,7 +90,6 @@ body {
   padding: 4px 0;
   font-size: 12px;
 }
-
 .tree-section {
   padding: 8px 16px 2px;
   font-size: 9px;
@@ -189,6 +101,17 @@ body {
   justify-content: space-between;
   align-items: center;
 }
+.tree-section .add-btn {
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--muted);
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  line-height: 1;
+}
+.tree-section .add-btn:hover { background: var(--bdr); color: var(--txt); }
 
 .tree-item {
   display: flex;
@@ -204,26 +127,19 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-.tree-item:hover {
-  background: var(--acc-light);
-}
-
+.tree-item:hover { background: var(--acc-light); }
 .tree-item.active {
   background: var(--acc-light);
   color: var(--acc);
   border-left-color: var(--acc);
   font-weight: 500;
 }
+.nav-actions { display: none; margin-left: auto; gap: 2px; }
+.tree-item:hover .nav-actions { display: flex; }
+.nav-actions button { font-size: 8px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 1px 3px; }
+.nav-actions button:hover { color: var(--red); }
 
-.tree-item .tree-icon {
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.tree-item.sub { padding-left: 36px; font-size: 11px; color: var(--muted); }
-
-/* ═══════════ Main Work Area ═══════════ */
+/* ═══════ Main Area ═══════ */
 .main-area {
   flex: 1;
   display: flex;
@@ -233,53 +149,44 @@ body {
   background: var(--bg);
 }
 
-/* Tab bar */
-.tab-bar {
+/* Phase Tabs */
+.phase-tabs {
   display: flex;
   align-items: center;
   background: #ffffff;
   border-bottom: 1px solid var(--bdr);
   padding: 0 8px;
-  height: 36px;
+  height: 40px;
   flex-shrink: 0;
-  gap: 2px;
+  gap: 0;
 }
-
-.tab-btn {
-  padding: 4px 14px;
-  font-size: 11px;
+.phase-tab {
+  padding: 6px 16px;
+  font-size: 12px;
   cursor: pointer;
   border: none;
   background: none;
   color: var(--muted);
-  border-radius: var(--radius) var(--radius) 0 0;
-  height: 28px;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   transition: all 0.12s;
   font-family: var(--font);
+  border-bottom: 3px solid transparent;
 }
-
-.tab-btn:hover { color: var(--txt); }
-
-.tab-btn.active {
+.phase-tab:hover { color: var(--txt); }
+.phase-tab.active {
   color: var(--acc);
-  font-weight: 500;
-  box-shadow: inset 0 -2px 0 var(--acc);
+  font-weight: 600;
+  border-bottom-color: var(--acc);
 }
-
-.tab-spacer { flex: 1; }
-
-.tab-actions {
-  display: flex;
-  gap: 4px;
-  padding-right: 8px;
-}
-
-.tab-actions button {
+.phase-tab.locked { color: #ccc; cursor: not-allowed; }
+.phase-spacer { flex: 1; }
+.phase-actions { display: flex; gap: 6px; padding-right: 10px; }
+.phase-actions button {
   font-size: 10px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   border: 1px solid var(--bdr);
   background: var(--card);
   cursor: pointer;
@@ -287,62 +194,49 @@ body {
   color: var(--muted);
   font-family: var(--font);
 }
+.phase-actions button:hover { color: var(--acc); border-color: var(--acc); }
+.phase-actions button.present-btn { background: var(--acc); color: #fff; border-color: var(--acc); }
 
-.tab-actions button:hover { color: var(--acc); border-color: var(--acc); }
-.tab-actions button.present-btn { background: var(--acc); color: #fff; border-color: var(--acc); }
-
-/* Editor container */
-.editor-pane {
+/* Phase Content */
+.phase-content {
   flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
   min-height: 0;
-  overflow: hidden;
-  display: flex;
-  position: relative;
 }
+.phase-content .phase-panel { display: none; }
+.phase-content .phase-panel.active { display: block; }
 
-.editor-pane.split {
-  /* handled in JS */
-}
-
+/* ═══════ CodeMirror wraps ═══════ */
 .cm-wrap {
-  flex: 1;
-  min-width: 0;
-  overflow: auto;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.6;
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
   background: #ffffff;
+  overflow: hidden;
+  min-height: 60vh;
 }
-
-.cm-wrap .cm-editor {
-  height: 100%;
-}
-
+.cm-wrap .cm-editor { height: 100%; }
 .cm-wrap .cm-editor .cm-scroller {
   font-family: var(--font-mono) !important;
   line-height: 1.7 !important;
 }
-
 .cm-wrap .cm-editor .cm-content {
-  padding: 4px 0;
+  padding: 8px 12px;
   font-family: var(--font-mono) !important;
+  font-size: 13px;
 }
 
-/* Preview pane */
+/* Preview */
 .preview-pane {
-  flex: 1;
-  min-width: 0;
-  overflow-y: auto;
+  display: none;
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
   padding: 16px 24px;
   background: #ffffff;
-  display: none;
-  border-left: 1px solid var(--bdr);
+  overflow-y: auto;
+  min-height: 60vh;
 }
-
 .preview-pane.visible { display: block; }
-
-.preview-pane.full { border-left: none; flex: 1; }
-
 .preview-content {
   max-width: 800px;
   margin: 0 auto;
@@ -350,75 +244,22 @@ body {
   line-height: 1.8;
   color: var(--txt);
 }
-
-.preview-content h1, .preview-content h2, .preview-content h3 {
-  margin: 16px 0 8px;
-  font-weight: 600;
-  color: var(--txt);
-}
-
+.preview-content h1, .preview-content h2, .preview-content h3 { margin: 16px 0 8px; font-weight: 600; }
 .preview-content h1 { font-size: 22px; border-bottom: 1px solid var(--bdr); padding-bottom: 6px; }
 .preview-content h2 { font-size: 18px; }
 .preview-content h3 { font-size: 15px; }
-
 .preview-content p { margin: 6px 0; }
 .preview-content ul, .preview-content ol { margin: 4px 0 4px 20px; }
 .preview-content li { margin: 2px 0; }
-
-.preview-content code {
-  background: #f6f8fa;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-}
-
-.preview-content pre {
-  background: #f6f8fa;
-  padding: 12px 16px;
-  border-radius: var(--radius);
-  overflow-x: auto;
-  margin: 8px 0;
-  border: 1px solid var(--bdr);
-}
-
-.preview-content pre code {
-  background: none;
-  padding: 0;
-}
-
-.preview-content table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 10px 0;
-  font-size: 12px;
-}
-
-.preview-content th {
-  background: #f6f8fa;
-  padding: 6px 12px;
-  text-align: left;
-  font-weight: 600;
-  border: 1px solid var(--bdr);
-}
-
-.preview-content td {
-  padding: 4px 12px;
-  border: 1px solid var(--bdr);
-}
-
-.preview-content blockquote {
-  border-left: 3px solid var(--acc);
-  margin: 8px 0;
-  padding: 4px 14px;
-  color: var(--muted);
-  background: var(--acc-light);
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
+.preview-content code { background: #f6f8fa; padding: 1px 5px; border-radius: 3px; font-family: var(--font-mono); font-size: 0.9em; }
+.preview-content pre { background: #f6f8fa; padding: 12px 16px; border-radius: var(--radius); overflow-x: auto; margin: 8px 0; border: 1px solid var(--bdr); }
+.preview-content table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 12px; }
+.preview-content th { background: #f6f8fa; padding: 6px 12px; text-align: left; font-weight: 600; border: 1px solid var(--bdr); }
+.preview-content td { padding: 4px 12px; border: 1px solid var(--bdr); }
+.preview-content blockquote { border-left: 3px solid var(--acc); margin: 8px 0; padding: 4px 14px; color: var(--muted); background: var(--acc-light); border-radius: 0 var(--radius) var(--radius) 0; }
 .preview-content img { max-width: 100%; border-radius: var(--radius); }
 
-/* ═══════════ Right Panel — AI Chat (320px, collapsible) ═══════════ */
+/* ═══════ Right AI Panel ═══════ */
 .chat-panel {
   width: var(--chat-w);
   min-width: 0;
@@ -431,13 +272,7 @@ body {
   z-index: 10;
   flex-shrink: 0;
 }
-
-.chat-panel.collapsed {
-  width: 0;
-  min-width: 0;
-  border-left: none;
-}
-
+.chat-panel.collapsed { width: 0; min-width: 0; border-left: none; }
 .chat-header {
   padding: 10px 14px;
   border-bottom: 1px solid var(--bdr);
@@ -447,21 +282,9 @@ body {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  color: var(--txt);
 }
-
-.chat-header button {
-  font-size: 16px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--muted);
-  padding: 2px 4px;
-  border-radius: var(--radius);
-}
-
+.chat-header button { font-size: 16px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 2px 4px; border-radius: var(--radius); }
 .chat-header button:hover { background: var(--bdr); color: var(--txt); }
-
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -470,7 +293,6 @@ body {
   flex-direction: column;
   gap: 8px;
 }
-
 .chat-msg {
   padding: 8px 12px;
   border-radius: var(--radius);
@@ -479,20 +301,8 @@ body {
   line-height: 1.5;
   word-wrap: break-word;
 }
-
-.chat-msg.user {
-  align-self: flex-end;
-  background: var(--acc);
-  color: #ffffff;
-}
-
-.chat-msg.agent {
-  align-self: flex-start;
-  background: #f6f8fa;
-  color: var(--txt);
-  border: 1px solid var(--bdr);
-}
-
+.chat-msg.user { align-self: flex-end; background: var(--acc); color: #ffffff; }
+.chat-msg.agent { align-self: flex-start; background: #f6f8fa; color: var(--txt); border: 1px solid var(--bdr); }
 .chat-input-row {
   display: flex;
   gap: 4px;
@@ -500,7 +310,6 @@ body {
   border-top: 1px solid var(--bdr);
   flex-shrink: 0;
 }
-
 .chat-input-row input {
   flex: 1;
   padding: 6px 10px;
@@ -512,9 +321,7 @@ body {
   color: var(--txt);
   background: var(--bg);
 }
-
 .chat-input-row input:focus { border-color: var(--acc); }
-
 .chat-input-row button {
   padding: 6px 14px;
   background: var(--acc);
@@ -525,151 +332,281 @@ body {
   font-size: 12px;
   font-family: var(--font);
 }
-
 .chat-input-row button:hover { opacity: 0.9; }
 
-/* ═══════════ Status Bar ═══════════ */
+/* ═══════ Cards ═══════ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.card h3 { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--txt); }
+.card h4 { font-size: 12px; font-weight: 600; margin: 8px 0 6px; color: var(--acc); }
+
+/* ═══════ Buttons ═══════ */
+.btn {
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--bdr);
+  font-size: 11px;
+  cursor: pointer;
+  background: var(--card);
+  color: var(--txt);
+  font-family: var(--font);
+  transition: all 0.12s;
+}
+.btn:hover { border-color: var(--acc); color: var(--acc); }
+.btn.prim { background: var(--acc); color: #fff; border: none; }
+.btn.grn { background: var(--grn); color: #fff; border: none; }
+.btn.red { background: var(--red); color: #fff; border: none; }
+.btn.sm { padding: 3px 8px; font-size: 10px; }
+.btn-group { display: flex; gap: 6px; margin: 8px 0; flex-wrap: wrap; }
+
+/* ═══════ Data Table ═══════ */
+.data-tbl { width: 100%; font-size: 11px; border-collapse: collapse; margin-top: 6px; }
+.data-tbl th { text-align: left; padding: 5px 10px; background: #f6f8fa; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--bdr); font-size: 10px; }
+.data-tbl td { padding: 4px 10px; border-bottom: 1px solid #eee; }
+.data-tbl .hl { color: var(--acc); font-weight: 600; }
+
+/* ═══════ Forms ═══════ */
+.form-group { margin-bottom: 10px; }
+label { font-size: 10px; color: var(--muted); display: block; margin-bottom: 3px; font-weight: 500; }
+input[type=text], input[type=password], input[type=number], textarea, select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--bdr);
+  font-size: 12px;
+  background: var(--card);
+  color: var(--txt);
+  border-radius: var(--radius);
+  font-family: var(--font);
+}
+textarea { resize: vertical; min-height: 50px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+/* ═══════ Four-Panel Comic Grid ═══════ */
+.comic-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  min-height: 320px;
+  margin: 10px 0;
+}
+.comic-panel {
+  border: 2px solid var(--bdr);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.comic-panel .cp-num {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.comic-panel .cp-title {
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--bdr);
+  padding-bottom: 5px;
+  flex-shrink: 0;
+}
+.comic-panel .cp-body {
+  font-size: 10px;
+  color: var(--txt);
+  line-height: 1.6;
+  flex: 1;
+  overflow-y: auto;
+  outline: none;
+  min-height: 40px;
+}
+.comic-panel .cp-body:focus { outline: none; }
+.comic-panel .cp-body b, .comic-panel .cp-body strong { color: var(--txt); }
+.comic-panel:nth-child(1) .cp-num { color: #2c5f8a; }
+.comic-panel:nth-child(2) .cp-num { color: #b8860b; }
+.comic-panel:nth-child(3) .cp-num { color: #2a7d4f; }
+.comic-panel:nth-child(4) .cp-num { color: #b33; }
+
+/* ═══════ Literature Cards ═══════ */
+.lit-card {
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s;
+}
+.lit-card:hover { border-color: var(--acc); }
+.lit-card .lit-title { font-size: 13px; font-weight: 600; color: var(--acc); margin-bottom: 4px; }
+.lit-card .lit-meta { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.lit-card .lit-notes { font-size: 11px; color: var(--txt); line-height: 1.6; }
+.lit-card .lit-actions { display: flex; gap: 4px; margin-top: 8px; }
+
+/* ═══════ Goal Items ═══════ */
+.goal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  background: var(--card);
+}
+.goal-num { font-weight: 700; color: var(--acc); min-width: 24px; font-size: 13px; }
+.goal-text { flex: 1; font-size: 12px; }
+.goal-kpi { font-size: 10px; color: var(--muted); min-width: 80px; text-align: right; }
+.goal-status { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #e8f5e9; color: var(--grn); white-space: nowrap; }
+.goal-status.pending { background: #fff3e0; color: var(--warn); }
+
+/* ═══════ Experimental Steps ═══════ */
+.step-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.step-nav-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-size: 11px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all 0.12s;
+}
+.step-nav-btn:hover { border-color: var(--acc); }
+.step-nav-btn.active { background: var(--acc); color: #fff; border-color: var(--acc); }
+.step-nav .add-step-btn { padding: 5px 12px; border: 1px dashed var(--bdr); background: none; color: var(--muted); font-size: 14px; cursor: pointer; border-radius: var(--radius); }
+.step-nav .add-step-btn:hover { border-color: var(--acc); color: var(--acc); }
+
+/* Parameter Matrix */
+.param-matrix { overflow-x: auto; margin-bottom: 12px; }
+.param-matrix table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.param-matrix th, .param-matrix td { border: 1px solid var(--bdr); padding: 5px 8px; text-align: left; }
+.param-matrix th { background: #f6f8fa; font-weight: 600; }
+.param-matrix td[contenteditable] { outline: 2px solid transparent; transition: outline 0.15s; }
+.param-matrix td[contenteditable]:focus { outline: 2px solid var(--acc); background: var(--acc-light); }
+
+/* Skill section */
+.skill-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.skill-checkboxes label { font-size: 10px; display: flex; align-items: center; gap: 3px; cursor: pointer; padding: 3px 8px; border: 1px solid var(--bdr); border-radius: var(--radius); }
+.skill-checkboxes label:hover { border-color: var(--acc); }
+.skill-checkboxes input { margin: 0; }
+.progress-bar {
+  padding: 6px 12px;
+  background: #f6f8fa;
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin: 6px 0;
+}
+
+/* ═══════ Results Grid ═══════ */
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.result-card { border: 1px solid var(--bdr); border-radius: var(--radius); padding: 14px; background: var(--card); box-shadow: var(--shadow); }
+.result-card canvas { width: 100% !important; max-height: 220px; }
+
+/* ═══════ Paper sections ═══════ */
+.paper-section {
+  border: 1px solid var(--bdr);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.paper-section .paper-section-header {
+  padding: 10px 14px;
+  background: #f6f8fa;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+.paper-section .paper-section-header:hover { background: #eef0f2; }
+.paper-section .paper-section-body {
+  padding: 14px;
+  display: none;
+  border-top: 1px solid var(--bdr);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.paper-section.open .paper-section-body { display: block; }
+
+/* ═══════ Modals ═══════ */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--card);
+  border-radius: 6px;
+  padding: 24px;
+  width: 500px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+.modal-box h3 { font-size: 14px; margin-bottom: 14px; }
+.modal-box h4 { font-size: 12px; margin: 10px 0 6px; }
+
+/* ═══════ Auth Modal ═══════ */
+.auth-tabs { display: flex; gap: 0; margin-bottom: 14px; border-bottom: 2px solid var(--bdr); }
+.auth-tab { flex: 1; padding: 8px; text-align: center; cursor: pointer; font-size: 12px; color: var(--muted); background: none; border: none; font-family: var(--font); }
+.auth-tab.active { color: var(--acc); border-bottom: 2px solid var(--acc); margin-bottom: -2px; font-weight: 600; }
+
+/* ═══════ Status Bar ═══════ */
 .status-bar {
-  height: var(--status-h);
-  min-height: var(--status-h);
+  height: 26px;
   background: var(--acc);
   color: #ffffff;
   display: flex;
   align-items: center;
   padding: 0 12px;
-  font-size: 11px;
-  gap: 16px;
+  font-size: 10px;
+  gap: 14px;
   z-index: 30;
   flex-shrink: 0;
 }
+.status-bar .status-left { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status-bar .status-right { display: flex; gap: 8px; align-items: center; }
+.status-bar .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); flex-shrink: 0; }
+.status-bar .auth-dot.offline { background: var(--warn); }
 
-.status-bar .status-left {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* ═══════ Present Mode ═══════ */
+body.presenting { background: #1a1a2e; }
+body.presenting .sidebar { display: none; }
+body.presenting .chat-panel { display: none; }
+body.presenting .status-bar { display: none; }
+body.presenting .phase-tabs { opacity: 0.3; }
+body.presenting .phase-content { display: flex; align-items: center; justify-content: center; padding: 20px; }
+body.presenting .phase-content .phase-panel.active { width: 100%; max-width: 1000px; max-height: 90vh; }
+.present-hint { display: none; position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.4); font-size: 11px; z-index: 200; }
+body.presenting .present-hint { display: block; }
 
-.status-bar .status-center {
-  display: flex;
-  gap: 12px;
-  color: rgba(255,255,255,0.8);
-  font-size: 10px;
-}
-
-.status-bar .status-right {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.status-bar button {
-  background: rgba(255,255,255,0.15);
-  color: #ffffff;
-  border: 1px solid rgba(255,255,255,0.25);
-  padding: 1px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  font-family: var(--font);
-}
-
-.status-bar button:hover { background: rgba(255,255,255,0.25); }
-
-/* ═══════════ Present Mode Overlay ═══════════ */
-.present-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #1a1a2e;
-  z-index: 1000;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.present-overlay.active { display: flex; }
-
-.present-slide {
-  width: 90vw;
-  max-width: 1200px;
-  max-height: 85vh;
-  aspect-ratio: 16/9;
-  background: #ffffff;
-  border-radius: 6px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  overflow-y: auto;
-  padding: 40px 56px;
-  font-size: 18px;
-  line-height: 1.8;
-}
-
-.present-slide h1 { font-size: 32px; margin-bottom: 16px; }
-.present-slide h2 { font-size: 26px; margin-bottom: 12px; }
-.present-slide h3 { font-size: 20px; margin-bottom: 8px; }
-.present-slide p { margin: 10px 0; font-size: 18px; }
-
-.present-controls {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.present-controls button {
-  padding: 6px 16px;
-  background: rgba(255,255,255,0.15);
-  color: #fff;
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 12px;
-  font-family: var(--font);
-}
-
-.present-controls button:hover { background: rgba(255,255,255,0.25); }
-
-.present-hint {
-  position: fixed;
-  bottom: 20px;
-  color: rgba(255,255,255,0.4);
-  font-size: 12px;
-  z-index: 1001;
-}
-
-/* ═══════════ Slash Command Menu ═══════════ */
-.slash-menu {
-  position: fixed;
-  background: var(--card);
-  border: 1px solid var(--bdr);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  z-index: 2000;
-  display: none;
-  min-width: 200px;
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 4px;
-}
-
-.slash-menu .slash-item {
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 11px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: 3px;
-}
-
-.slash-menu .slash-item:hover,
-.slash-menu .slash-item.selected {
-  background: var(--acc-light);
-}
-
-.slash-menu .slash-item .slash-label { font-weight: 500; }
-.slash-menu .slash-item .slash-desc { font-size: 9px; color: var(--muted); margin-left: auto; }
-
-/* ═══════════ Toast ═══════════ */
+/* ═══════ Toast ═══════ */
 .toast {
   position: fixed;
   bottom: 40px;
@@ -683,188 +620,237 @@ body {
   animation: toastIn 0.3s ease;
   font-family: var(--font);
 }
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══════════ Scrollbar ═══════════ */
+/* ═══════ Scrollbar ═══════ */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #c1c7cd; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #a0a6ac; }
-
-/* ═══════════ Auth mini indicator ═══════════ */
-.auth-indicator {
-  padding: 8px 12px;
-  border-top: 1px solid var(--bdr);
-  font-size: 10px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.auth-indicator .auth-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--grn);
-  flex-shrink: 0;
-}
-
-.auth-indicator .auth-dot.offline { background: var(--warn); }
-
-/* data list in experiments sidebar */
-.data-list-item {
-  padding: 4px 16px 4px 28px;
-  font-size: 10px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.data-list-item:hover { color: var(--txt); background: var(--acc-light); }
 </style>
 </head>
 <body>
 
-<!-- ═══════════ Activity Bar ═══════════ -->
+<!-- ═══════ App Shell ═══════ -->
 <div class="app-shell">
-  <div class="activity-bar" id="activityBar">
-    <button class="activity-btn active" data-panel="files" title="Projects (Ctrl+1)">📁</button>
-    <button class="activity-btn" data-panel="experiments" title="Experiments (Ctrl+2)">🔬</button>
-    <button class="activity-btn" data-panel="data" title="Data (Ctrl+3)">📊</button>
-    <button class="activity-btn" data-panel="chat" title="AI Chat (Ctrl+4)">💬</button>
-    <div class="activity-spacer"></div>
-    <button class="activity-btn" data-panel="settings" title="Settings (Ctrl+5)">⚙</button>
-    <div class="auth-indicator">
-      <span class="auth-dot" id="authDot"></span>
+
+  <!-- Left Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="logo">Virgo Agent</span>
+      <span class="badge">v3</span>
     </div>
+    <div class="sidebar-tree" id="sidebarTree"></div>
   </div>
 
-  <!-- ═══════════ Left Sidebar ═══════════ -->
-  <div class="left-sidebar" id="leftSidebar">
-    <!-- Files Panel -->
-    <div class="sidebar-section active" id="panel-files">
-      <div class="sidebar-header">
-        <span>📁 Project Files</span>
-        <button class="add-btn" onclick="addNewPage()" title="New Page">+</button>
-      </div>
-      <div class="sidebar-tree" id="filesTree"></div>
-    </div>
-
-    <!-- Experiments Panel -->
-    <div class="sidebar-section" id="panel-experiments">
-      <div class="sidebar-header">
-        <span>🔬 Experiments</span>
-        <button class="add-btn" onclick="addNewStep()" title="New Step">+</button>
-      </div>
-      <div class="sidebar-tree" id="experimentsTree"></div>
-    </div>
-
-    <!-- Data Panel -->
-    <div class="sidebar-section" id="panel-data">
-      <div class="sidebar-header">
-        <span>📊 Data Files</span>
-        <button class="add-btn" onclick="uploadDataFile()" title="Upload">+</button>
-      </div>
-      <div class="sidebar-tree" id="dataTree">
-        <div style="padding:16px;font-size:11px;color:var(--muted);text-align:center">No data files yet.<br>Upload CSV or data files.</div>
-      </div>
-    </div>
-
-    <!-- Settings Panel -->
-    <div class="sidebar-section" id="panel-settings">
-      <div class="sidebar-header"><span>⚙ Settings</span></div>
-      <div class="sidebar-tree" style="padding:12px">
-        <div style="margin-bottom:12px">
-          <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px">API Provider</label>
-          <select id="apiProvider" style="width:100%;padding:5px;border:1px solid var(--bdr);border-radius:3px;font-size:11px;font-family:var(--font)" onchange="updateApiProvider()">
-            <option value="deepseek">DeepSeek</option>
-            <option value="openai">OpenAI</option>
-          </select>
-        </div>
-        <div style="margin-bottom:12px">
-          <label style="font-size:10px;color:var(--muted);display:block;margin-bottom:4px">API Key</label>
-          <input type="password" id="apiKey" placeholder="sk-..." style="width:100%;padding:5px;border:1px solid var(--bdr);border-radius:3px;font-size:11px;font-family:var(--font)">
-        </div>
-        <button onclick="saveApiSettings()" style="width:100%;padding:6px;background:var(--acc);color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:11px;font-family:var(--font)">💾 Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ Main Work Area ═══════════ -->
+  <!-- Main Area -->
   <div class="main-area">
-    <!-- Tab Bar -->
-    <div class="tab-bar">
-      <button class="tab-btn active" data-mode="edit" id="tabEdit">✏️ Edit</button>
-      <button class="tab-btn" data-mode="preview" id="tabPreview">👁 Preview</button>
-      <button class="tab-btn" data-mode="split" id="tabSplit">◫ Split</button>
-      <div class="tab-spacer"></div>
-      <span id="docTitle" style="font-size:11px;color:var(--muted);padding:0 8px">Untitled</span>
-      <div class="tab-actions">
+    <!-- Phase Tabs -->
+    <div class="phase-tabs" id="phaseTabs">
+      <button class="phase-tab active" data-phase="issue">🎯 ISSUE</button>
+      <button class="phase-tab locked" data-phase="literature">📚 Literature</button>
+      <button class="phase-tab locked" data-phase="goals">🏁 GOALS</button>
+      <button class="phase-tab locked" data-phase="experimental">🔬 EXPERIMENTAL</button>
+      <button class="phase-tab locked" data-phase="results">📊 RESULTS</button>
+      <button class="phase-tab locked" data-phase="paper">📝 PAPER</button>
+      <div class="phase-spacer"></div>
+      <div class="phase-actions">
+        <span id="saveStatus" style="font-size:10px;color:var(--muted);display:none;align-self:center">💾 Saved</span>
         <button class="present-btn" onclick="togglePresent()" title="Present Mode">▶ Present</button>
       </div>
     </div>
 
-    <!-- Editor + Preview Area -->
-    <div class="editor-pane" id="editorPane">
-      <div class="cm-wrap" id="cmContainer"></div>
-      <div class="preview-pane visible" id="previewPane">
-        <div class="preview-content" id="previewContent"></div>
+    <!-- Phase Content -->
+    <div class="phase-content" id="phaseContent">
+
+      <!-- ISSUE -->
+      <div class="phase-panel active" id="panel-issue">
+        <div class="card" style="margin-bottom:8px">
+          <h3>📝 Research Issue</h3>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button class="btn sm" id="issueEditBtn" onclick="setCMViewMode('issue', 'edit')">✏️ Edit</button>
+            <button class="btn sm" id="issuePrevBtn" onclick="setCMViewMode('issue', 'preview')">👁 Preview</button>
+            <button class="btn sm" id="issueSplitBtn" onclick="setCMViewMode('issue', 'split')">◫ Split</button>
+          </div>
+          <div id="issueEditor" class="cm-wrap" style="min-height:55vh"></div>
+          <div id="issuePreview" class="preview-pane"></div>
+        </div>
       </div>
+
+      <!-- Literature -->
+      <div class="phase-panel" id="panel-literature">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">📚 Literature Review</h3>
+            <button class="btn prim" onclick="showLitForm()">+ Add Reference</button>
+          </div>
+          <div id="litCards" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- GOALS -->
+      <div class="phase-panel" id="panel-goals">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">🏁 Research Objectives</h3>
+            <button class="btn prim" onclick="addGoal()">+ Add Goal</button>
+          </div>
+          <div id="goalsList" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- EXPERIMENTAL -->
+      <div class="phase-panel" id="panel-experimental">
+        <!-- Parameter Matrix -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0">🧪 Parameter Matrix</h3>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" onclick="addParamColumn()">+ Column</button>
+              <button class="btn sm" onclick="addParamRow()">+ Row</button>
+            </div>
+          </div>
+          <div class="param-matrix" id="paramMatrix"></div>
+        </div>
+
+        <!-- Step Navigation -->
+        <div class="card">
+          <div class="step-nav" id="stepNav"></div>
+
+          <!-- Active Step Content -->
+          <div id="activeStepContent"></div>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div class="phase-panel" id="panel-results">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">📊 Results</h3>
+            <button class="btn prim" onclick="generateReport()">📄 Generate Report</button>
+          </div>
+          <div class="results-grid" id="resultsGrid" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- PAPER -->
+      <div class="phase-panel" id="panel-paper">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">📝 Manuscript Draft</h3>
+            <button class="btn prim" onclick="exportPaper()">📥 Export</button>
+          </div>
+          <div id="paperSections" style="margin-top:12px"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ═══════════ Right Panel — AI Chat ═══════════ -->
+  <!-- Right AI Panel -->
   <div class="chat-panel" id="chatPanel">
     <div class="chat-header">
       <span>💬 AI Assistant</span>
-      <button onclick="toggleChatPanel()" title="Close panel">✕</button>
+      <button onclick="toggleChatPanel()" title="Close">✕</button>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="chat-msg agent">Hello! I'm your AI research assistant. I can help analyze data, answer questions, and guide your research. Try asking me something!</div>
+      <div class="chat-msg agent">Hello! I'm your Virgo AI research assistant. I can help analyze data, answer scientific questions, and guide your research workflow. Try asking me something!</div>
     </div>
     <div class="chat-input-row">
       <input type="text" id="chatInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter')sendChat()">
       <button onclick="sendChat()">Send</button>
     </div>
   </div>
+
 </div>
 
-<!-- ═══════════ Status Bar ═══════════ -->
+<!-- Status Bar -->
 <div class="status-bar">
-  <div class="status-left" id="statusPath">No file open</div>
-  <div class="status-center">
-    <span id="statusWords">0 words</span>
-    <span id="statusSync">💾 Saved</span>
-  </div>
+  <div class="status-left" id="statusPhase">🎯 ISSUE</div>
   <div class="status-right">
-    <button onclick="togglePresent()" title="Present (Ctrl+Shift+P)">▶ Present</button>
-    <span style="font-size:10px;opacity:0.7" id="statusZoom">100%</span>
+    <span style="display:flex;align-items:center;gap:4px"><span class="auth-dot offline" id="authDot"></span><span id="authLabel">Offline</span></span>
+    <span id="statusSync">💾 Saved</span>
+    <button onclick="showAuthModal()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:1px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font)">🔑 Sign In</button>
   </div>
 </div>
 
-<!-- ═══════════ Present Mode Overlay ═══════════ -->
-<div class="present-overlay" id="presentOverlay">
-  <div class="present-slide" id="presentSlide"></div>
-  <div class="present-controls">
-    <button onclick="presentPrev()" title="Previous slide (←)">◀ Prev</button>
-    <button onclick="presentNext()" title="Next slide (→)">Next ▶</button>
-    <button onclick="togglePresent()" title="Exit (Esc)">✕ Exit</button>
+<!-- ═══════ Auth Modal ═══════ -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal-box">
+    <h3>🔑 Virgo Agent — Sign In</h3>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+    </div>
+    <div id="authLogin">
+      <div class="form-group"><label>Email</label><input type="text" id="authEmail" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="authPassword" placeholder="••••••"></div>
+      <button class="btn prim" onclick="doLogin()" style="width:100%">Sign In</button>
+    </div>
+    <div id="authRegister" style="display:none">
+      <div class="form-group"><label>Email</label><input type="text" id="regEmail" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="At least 6 characters"></div>
+      <button class="btn prim" onclick="doRegister()" style="width:100%">Create Account</button>
+    </div>
+    <div style="margin-top:10px;text-align:center">
+      <button class="btn sm" onclick="closeAuthModal()">Skip for now (offline)</button>
+    </div>
   </div>
-  <div class="present-hint">← → arrow keys to navigate · Esc to exit</div>
 </div>
 
-<!-- ═══════════ Slash Command Menu ═══════════ -->
-<div class="slash-menu" id="slashMenu"></div>
+<!-- ═══════ Literature Editor Modal ═══════ -->
+<div class="modal-overlay" id="litModal">
+  <div class="modal-box">
+    <h3 id="litModalTitle">📚 Add Reference</h3>
+    <input type="hidden" id="litEditId">
+    <div class="form-row">
+      <div class="form-group"><label>Title</label><input type="text" id="litTitle" placeholder="Paper title"></div>
+      <div class="form-group"><label>Authors</label><input type="text" id="litAuthors" placeholder="Last, First et al."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Journal</label><input type="text" id="litJournal" placeholder="Journal name"></div>
+      <div class="form-group"><label>Year</label><input type="text" id="litYear" placeholder="2024"></div>
+    </div>
+    <div class="form-group"><label>DOI</label><input type="text" id="litDoi" placeholder="10.xxxx/xxxxx"></div>
+    <div class="form-group"><label>Notes</label><textarea id="litNotes" rows="4" placeholder="Key findings, methods, relevance..."></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn prim" onclick="saveLit()">💾 Save</button>
+      <button class="btn" onclick="closeLitModal()">Cancel</button>
+      <button class="btn red sm" id="litDeleteBtn" style="display:none;margin-left:auto" onclick="deleteLit()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
 
-<!-- ═══════════ Toast container ═══════════ -->
+<!-- ═══════ Step Modal ═══════ -->
+<div class="modal-overlay" id="stepModal">
+  <div class="modal-box" style="width:640px">
+    <h3>➕ Add Experimental Step</h3>
+    <div class="form-group"><label>Step Title</label><input type="text" id="stepTitle" placeholder="e.g., APCVD Coating"></div>
+    <h4>① Fixed Parameters</h4>
+    <textarea id="stepFixed" rows="3" placeholder="Substrate: Ni foam&#10;Temperature: 180 °C"></textarea>
+    <h4>② Variable Parameters</h4>
+    <textarea id="stepVar" rows="3" placeholder="Temperature: 850 / 900 / 970 °C&#10;Gas ratio: 1:3 / 1:4"></textarea>
+    <h4>③ Detection</h4>
+    <textarea id="stepDetect" rows="2" placeholder="SEM — surface morphology&#10;Raman — ID/IG ratio"></textarea>
+    <h4>④ Benchmark</h4>
+    <textarea id="stepBench" rows="2" placeholder="ID/IG ≤ 0.5&#10;Thickness 1.5–2.0 μm"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn prim" onclick="saveStep()">💾 Save Step</button>
+      <button class="btn" onclick="closeStepModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ Toast Container ═══════ -->
 <div id="toastContainer"></div>
 
+<!-- ═══════ Present Hint ═══════ -->
+<div class="present-hint" id="presentHint">← → arrow keys · Esc to exit</div>
+
+<!-- ═══════ Module Script ═══════ -->
 <script type="module">
 // ═══════════════════════════════════════════════════════════
-// Virgo Agent v2 — Core Application
+// Virgo Agent — Combined MVP Domain + v2 Tech
 // ═══════════════════════════════════════════════════════════
 
 import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, placeholder } from 'https://esm.sh/@codemirror/view@6.33.0';
@@ -877,20 +863,15 @@ import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } 
 import { searchKeymap, highlightSelectionMatches } from 'https://esm.sh/@codemirror/search@6.5.6';
 import { lintKeymap } from 'https://esm.sh/@codemirror/lint@6.8.0';
 
-// ═══════════ Globals ═══════════
-window.currentFile = null;  // { id, section, title, content }
-window.currentMode = 'edit'; // edit | preview | split
-window.presentSlideIdx = 0;
-window.presentSlides = [];
-window.slashMenuSel = -1;
-window._mirrorTimer = null;
-
+// ═══════ Globals ═══════
+window.V = {}; // namespace
 const SUPABASE_URL = 'https://mtshudmynuedafqixbvj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_97FLsYeAC_P5WWWeSkfvgQ_H99sN3VU';
-const DB_NAME = 'virgo_v2';
+const API_BASE = 'https://virgo-agent-api.onrender.com';
+const DB_NAME = 'virgo_v3';
 const DB_VER = 1;
 
-// ═══════════ Supabase Init ═══════════
+// ═══════ Supabase ═══════
 let supabase = null;
 let supabaseReady = false;
 let authUser = null;
@@ -903,9 +884,8 @@ try {
   }
 } catch(e) { console.warn('Supabase init failed', e); }
 
-// ═══════════ IndexedDB ═══════════
+// ═══════ IndexedDB ═══════
 let db = null;
-
 function openDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VER);
@@ -913,58 +893,26 @@ function openDB() {
       const d = e.target.result;
       if (!d.objectStoreNames.contains('pages')) d.createObjectStore('pages', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
-      if (!d.objectStoreNames.contains('chat_messages')) d.createObjectStore('chat_messages', { keyPath: 'id', autoIncrement: true });
-      if (!d.objectStoreNames.contains('projects')) d.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('chat_history')) d.createObjectStore('chat_history', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('literature')) d.createObjectStore('literature', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('steps')) d.createObjectStore('steps', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('goals')) d.createObjectStore('goals', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('param_matrix')) d.createObjectStore('param_matrix', { keyPath: 'id', autoIncrement: true });
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
     req.onerror = (e) => reject(e.target.error);
   });
 }
+function _dbPut(s, d) { return new Promise((r, j) => { const t = db.transaction(s, 'readwrite'); const q = t.objectStore(s).put(d); t.oncomplete = () => { r(q.result); scheduleMirror(); }; t.onerror = (e) => j(e.target.error); }); }
+function _dbGetAll(s) { return new Promise((r, j) => { const t = db.transaction(s, 'readonly'); const q = t.objectStore(s).getAll(); t.oncomplete = () => r(q.result); t.onerror = (e) => j(e.target.error); }); }
+function _dbGet(s, k) { return new Promise((r, j) => { const t = db.transaction(s, 'readonly'); const q = t.objectStore(s).get(k); t.oncomplete = () => r(q.result); t.onerror = (e) => j(e.target.error); }); }
+function _dbDelete(s, k) { return new Promise((r, j) => { const t = db.transaction(s, 'readwrite'); t.objectStore(s).delete(k); t.oncomplete = () => { r(); scheduleMirror(); }; t.onerror = (e) => j(e.target.error); }); }
 
-function _dbPut(store, data) {
-  return new Promise((resolve, reject) => {
-    const t = db.transaction(store, 'readwrite');
-    const q = t.objectStore(store).put(data);
-    t.oncomplete = () => { resolve(q.result); scheduleMirror(); };
-    t.onerror = (e) => reject(e.target.error);
-  });
-}
-
-function _dbGetAll(store) {
-  return new Promise((resolve, reject) => {
-    const t = db.transaction(store, 'readonly');
-    const q = t.objectStore(store).getAll();
-    t.oncomplete = () => resolve(q.result);
-    t.onerror = (e) => reject(e.target.error);
-  });
-}
-
-function _dbGet(store, key) {
-  return new Promise((resolve, reject) => {
-    const t = db.transaction(store, 'readonly');
-    const q = t.objectStore(store).get(key);
-    t.oncomplete = () => resolve(q.result);
-    t.onerror = (e) => reject(e.target.error);
-  });
-}
-
-function _dbDelete(store, key) {
-  return new Promise((resolve, reject) => {
-    const t = db.transaction(store, 'readwrite');
-    t.objectStore(store).delete(key);
-    t.oncomplete = () => { resolve(); scheduleMirror(); };
-    t.onerror = (e) => reject(e.target.error);
-  });
-}
-
-// Supabase-first wrappers
 function _useSupabase() { return supabaseReady && supabase && authUser; }
-
 async function dbPut(store, data) {
   if (_useSupabase()) {
     try {
-      const clean = {};
-      for (const k in data) { if (data[k] !== undefined) clean[k] = data[k]; }
+      const clean = {}; for (const k in data) { if (data[k] !== undefined) clean[k] = data[k]; }
       const result = await supabase.from(store).upsert(clean).select();
       if (result.error) throw result.error;
       if (result.data?.length > 0 && store !== 'settings') {
@@ -973,118 +921,124 @@ async function dbPut(store, data) {
       }
       scheduleMirror();
       return result.data?.[0]?.id ?? (data.id || undefined);
-    } catch(e) {
-      console.warn(`Supabase put failed for ${store}:`, e.message);
-      return _dbPut(store, data);
-    }
+    } catch(e) { console.warn(`Supabase put failed: ${store}`, e.message); return _dbPut(store, data); }
   }
   return _dbPut(store, data);
 }
-
 async function dbGetAll(store) {
   if (_useSupabase()) {
     try {
       const result = await supabase.from(store).select('*').order('id', { ascending: false });
       if (result.error) throw result.error;
       return result.data || [];
-    } catch(e) {
-      console.warn(`Supabase getAll failed for ${store}:`, e.message);
-      return _dbGetAll(store);
-    }
+    } catch(e) { return _dbGetAll(store); }
   }
   return _dbGetAll(store);
 }
-
 async function dbGet(store, key) {
   if (_useSupabase()) {
     try {
       const result = await supabase.from(store).select('*').eq('id', key).single();
-      if (result.error) {
-        if (result.error.code === 'PGRST116') return null;
-        throw result.error;
-      }
+      if (result.error) { if (result.error.code === 'PGRST116') return null; throw result.error; }
       return result.data || null;
-    } catch(e) {
-      if (e.code === 'PGRST116') return null;
-      return _dbGet(store, key);
-    }
+    } catch(e) { if (e.code === 'PGRST116') return null; return _dbGet(store, key); }
   }
   return _dbGet(store, key);
 }
-
 async function dbDelete(store, key) {
   if (_useSupabase()) {
-    try {
-      await supabase.from(store).delete().eq('id', key);
-      try { await _dbDelete(store, key); } catch(e) {}
-      scheduleMirror();
-    } catch(e) {
-      console.warn(`Supabase delete failed for ${store}:`, e.message);
-      return _dbDelete(store, key);
-    }
+    try { await supabase.from(store).delete().eq('id', key); try { await _dbDelete(store, key); } catch(e) {} scheduleMirror(); } catch(e) { return _dbDelete(store, key); }
   }
   return _dbDelete(store, key);
 }
 
-// ═══════════ localStorage Mirror ═══════════
-function scheduleMirror() {
-  clearTimeout(window._mirrorTimer);
-  window._mirrorTimer = setTimeout(mirrorToLocalStorage, 2000);
-}
-
+// ═══════ localStorage Mirror ═══════
+let _mirrorTimer = null;
+function scheduleMirror() { clearTimeout(_mirrorTimer); _mirrorTimer = setTimeout(mirrorToLocalStorage, 2000); }
 async function mirrorToLocalStorage() {
   try {
-    const stores = ['pages', 'settings', 'chat_messages', 'projects'];
+    const stores = ['pages', 'settings', 'chat_history', 'literature', 'steps', 'goals', 'param_matrix'];
     const snap = { _v: 1, _ts: new Date().toISOString(), stores: {} };
-    for (const s of stores) {
-      try { snap.stores[s] = await dbGetAll(s) || []; } catch(e) { snap.stores[s] = []; }
-    }
+    for (const s of stores) { try { snap.stores[s] = await _dbGetAll(s) || []; } catch(e) { snap.stores[s] = []; } }
     const json = JSON.stringify(snap);
-    if (json.length > 4 * 1024 * 1024) {
-      delete snap.stores.chat_messages;
-      const j2 = JSON.stringify(snap);
-      if (j2.length > 5 * 1024 * 1024) return;
-      localStorage.setItem('_virgo_v2_backup', j2);
-    } else {
-      localStorage.setItem('_virgo_v2_backup', json);
-    }
+    if (json.length > 5 * 1024 * 1024) return;
+    localStorage.setItem('_virgo_v3_backup', json);
   } catch(e) {}
 }
-
 async function recoverFromMirror() {
   try {
-    const raw = localStorage.getItem('_virgo_v2_backup');
+    const raw = localStorage.getItem('_virgo_v3_backup');
     if (!raw) return false;
     const snap = JSON.parse(raw);
     if (!snap?.stores || snap._v < 1) return false;
-    for (const s in snap.stores) {
-      for (const r of snap.stores[s]) await dbPut(s, r);
-    }
-    console.log('Recovered from localStorage mirror');
+    for (const s in snap.stores) { for (const r of snap.stores[s]) await _dbPut(s, r); }
     return true;
   } catch(e) { return false; }
 }
 
-// ═══════════ Auth ═══════════
+// ═══════ Auth ═══════
+async function showAuthModal() {
+  document.getElementById('authModal').classList.add('show');
+}
+window.showAuthModal = showAuthModal;
+function closeAuthModal() { document.getElementById('authModal').classList.remove('show'); }
+window.closeAuthModal = closeAuthModal;
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('authLogin').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('authRegister').style.display = tab === 'register' ? '' : 'none';
+}
+window.switchAuthTab = switchAuthTab;
+async function doLogin() {
+  if (!supabase) { toast('Supabase not available', 'var(--red)'); return; }
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    authUser = data.user;
+    updateAuthStatus();
+    closeAuthModal();
+    toast('Signed in ✓');
+  } catch(e) { toast('Login failed: ' + e.message, 'var(--red)'); }
+}
+window.doLogin = doLogin;
+async function doRegister() {
+  if (!supabase) { toast('Supabase not available', 'var(--red)'); return; }
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  try {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    authUser = data.user;
+    updateAuthStatus();
+    closeAuthModal();
+    toast('Account created ✓');
+  } catch(e) { toast('Registration failed: ' + e.message, 'var(--red)'); }
+}
+window.doRegister = doRegister;
 async function tryRestoreSession() {
   if (!supabase) return false;
   try {
     const { data } = await supabase.auth.getSession();
-    if (data?.session) {
-      authUser = data.session.user;
-      updateAuthDot();
-      return true;
-    }
+    if (data?.session) { authUser = data.session.user; updateAuthStatus(); return true; }
   } catch(e) {}
   return false;
 }
-
-function updateAuthDot() {
+function updateAuthStatus() {
   const dot = document.getElementById('authDot');
-  if (dot) dot.className = 'auth-dot' + (authUser ? '' : ' offline');
+  const label = document.getElementById('authLabel');
+  if (authUser) {
+    dot.className = 'auth-dot';
+    label.textContent = authUser.email || 'Signed In';
+  } else {
+    dot.className = 'auth-dot offline';
+    label.textContent = 'Offline';
+  }
 }
 
-// ═══════════ Toast ═══════════
+// ═══════ Toast ═══════
 function toast(msg, color) {
   const el = document.createElement('div');
   el.className = 'toast';
@@ -1093,102 +1047,73 @@ function toast(msg, color) {
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(() => el.remove(), 2500);
 }
+window.toast = toast;
 
-// ═══════════ Activity Bar ═══════════
-function initActivityBar() {
-  const btns = document.querySelectorAll('.activity-btn[data-panel]');
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const panel = btn.dataset.panel;
-      
-      // If chat button, toggle chat panel
-      if (panel === 'chat') {
-        toggleChatPanel();
-        return;
-      }
+// ═══════ Phase Management ═══════
+const PHASES = ['issue', 'literature', 'goals', 'experimental', 'results', 'paper'];
+const PHASE_ORDER = { issue: 0, literature: 1, goals: 2, experimental: 3, results: 4, paper: 5 };
+let activePhase = 'issue';
+let unlockedPhase = 1; // first one always unlocked
 
-      // Toggle sidebar
-      const sidebar = document.getElementById('leftSidebar');
-      const currentPanel = document.querySelector('.activity-btn.active')?.dataset.panel;
-      
-      if (currentPanel === panel && !sidebar.classList.contains('collapsed')) {
-        // Collapse sidebar
-        sidebar.classList.add('collapsed');
-        btns.forEach(b => b.classList.remove('active'));
-      } else {
-        // Show panel
-        btns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        sidebar.classList.remove('collapsed');
-        showSidebarSection(panel);
-      }
-    });
+function switchPhase(phase) {
+  const idx = PHASE_ORDER[phase];
+  if (idx > unlockedPhase) { toast('Complete prior phases first', 'var(--warn)'); return; }
+
+  activePhase = phase;
+  document.querySelectorAll('.phase-tab').forEach(t => {
+    t.classList.remove('active');
+    if (t.dataset.phase === phase) t.classList.add('active');
   });
-}
-
-function showSidebarSection(name) {
-  document.querySelectorAll('.sidebar-section').forEach(s => s.classList.remove('active'));
-  const panel = document.getElementById('panel-' + name);
-  if (panel) panel.classList.add('active');
-}
-
-// ═══════════ Chat Panel Toggle ═══════════
-function toggleChatPanel() {
-  const panel = document.getElementById('chatPanel');
-  panel.classList.toggle('collapsed');
-}
-
-// ═══════════ Tab Switching ═══════════
-function initTabs() {
-  const btns = document.querySelectorAll('.tab-btn');
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      window.currentMode = btn.dataset.mode;
-      applyViewMode();
-    });
+  document.querySelectorAll('.phase-panel').forEach(p => {
+    p.classList.remove('active');
+    if (p.id === 'panel-' + phase) p.classList.add('active');
   });
-}
+  document.getElementById('statusPhase').textContent = document.querySelector(`.phase-tab[data-phase="${phase}"]`)?.textContent?.trim() || phase;
+  refreshPhaseContent(phase);
 
-function applyViewMode() {
-  const preview = document.getElementById('previewPane');
-  const cmContainer = document.getElementById('cmContainer');
-  
-  preview.classList.remove('visible', 'full');
-  
-  switch (window.currentMode) {
-    case 'edit':
-      cmContainer.style.display = '';
-      cmContainer.style.flex = '1';
-      preview.style.display = 'none';
-      if (window.cmView) window.cmView.requestMeasure();
-      break;
-    case 'preview':
-      cmContainer.style.display = 'none';
-      preview.style.display = 'block';
-      preview.classList.add('visible', 'full');
-      renderPreview();
-      break;
-    case 'split':
-      cmContainer.style.display = '';
-      cmContainer.style.flex = '1';
-      preview.style.display = 'block';
-      preview.classList.add('visible');
-      if (window.cmView) window.cmView.requestMeasure();
-      renderPreview();
-      break;
+  // Auto-unlock next if content exists
+  checkPhaseUnlocks();
+}
+window.switchPhase = switchPhase;
+
+function checkPhaseUnlocks() {
+  for (let i = 1; i < PHASES.length; i++) {
+    if (i > unlockedPhase) {
+      const hasContent = phaseHasContent(PHASES[i]);
+      if (hasContent) {
+        for (let j = unlockedPhase + 1; j <= i && j < PHASES.length; j++) {
+          unlockedPhase = j;
+          document.querySelector(`.phase-tab[data-phase="${PHASES[j]}"]`)?.classList.remove('locked');
+        }
+      }
+    }
   }
 }
 
-// ═══════════ CodeMirror 6 Editor ═══════════
-let cmView = null;
+function phaseHasContent(phase) {
+  // Quick check — if there's demo data or user content
+  if (phase === 'issue') return true; // always unlocked
+  if (phase === 'literature') return window._litCache?.length > 0;
+  if (phase === 'goals') return window._goalCache?.length > 0;
+  if (phase === 'experimental') return window._stepCache?.length > 0;
+  if (phase === 'results') return window._stepCache?.some(s => s.results);
+  if (phase === 'paper') return true; // auto-generated
+  return false;
+}
 
-function initCodeMirror() {
-  const container = document.getElementById('cmContainer');
+// ═══════ CodeMirror Editors ═══════
+let cmEditors = {};
+const CM_VIEW_MODES = {};
+
+function createCodeMirror(containerId, initialContent) {
+  if (cmEditors[containerId]) {
+    cmEditors[containerId].destroy();
+  }
+  const container = document.getElementById(containerId);
+  if (!container) return null;
 
   const startState = EditorState.create({
-    doc: '',
+    doc: initialContent || '',
     extensions: [
       lineNumbers(),
       highlightActiveLine(),
@@ -1199,571 +1124,843 @@ function initCodeMirror() {
       autocompletion(),
       closeBrackets(),
       highlightSelectionMatches(),
-      placeholder('Start writing Markdown… Use / for commands'),
+      placeholder('Start writing...'),
       keymap.of([
-        ...defaultKeymap,
-        ...historyKeymap,
-        ...completionKeymap,
-        ...closeBracketsKeymap,
-        ...searchKeymap,
-        ...lintKeymap,
+        ...defaultKeymap, ...historyKeymap, ...completionKeymap,
+        ...closeBracketsKeymap, ...searchKeymap, ...lintKeymap,
         indentWithTab,
-        { key: 'Ctrl-s', run: () => { saveCurrentFile(); return true; } },
       ]),
       EditorView.updateListener.of(update => {
         if (update.docChanged) {
-          onEditorChange();
+          const status = document.getElementById('saveStatus');
+          if (status) { status.style.display = 'inline'; status.textContent = '🔄 Saving...'; }
+          clearTimeout(window._cmSaveTimer);
+          window._cmSaveTimer = setTimeout(() => {
+            autosaveCurrentPhase();
+            if (status) { status.textContent = '💾 Saved'; setTimeout(() => { status.style.display = 'none'; }, 1500); }
+          }, 2000);
         }
-      }),
-      EditorView.domEventHandlers({
-        keydown: (event, view) => {
-          // Slash command
-          if (event.key === '/' && !event.ctrlKey && !event.metaKey) {
-            const pos = view.state.selection.main.head;
-            const line = view.state.doc.lineAt(pos);
-            const textBefore = view.state.doc.sliceString(line.from, pos);
-            if (textBefore.trim() === '' || textBefore.endsWith(' ') || pos === line.from) {
-              setTimeout(() => showSlashMenu(view), 50);
-            }
-          }
-          // Escape slash menu
-          if (event.key === 'Escape') {
-            hideSlashMenu();
-          }
-        },
       }),
     ],
   });
 
-  cmView = new EditorView({
-    state: startState,
-    parent: container,
-  });
-
-  window.cmView = cmView;
+  const view = new EditorView({ state: startState, parent: container });
+  cmEditors[containerId] = view;
+  CM_VIEW_MODES[containerId] = 'edit';
+  return view;
 }
 
-// ═══════════ Slash Command Menu ═══════════
-const SLASH_COMMANDS = [
-  { label: 'Heading 1', desc: '#', icon: 'H1', insert: '# ' },
-  { label: 'Heading 2', desc: '##', icon: 'H2', insert: '## ' },
-  { label: 'Heading 3', desc: '###', icon: 'H3', insert: '### ' },
-  { label: 'Bold', desc: '**text**', icon: 'B', insert: '****', cursorOffset: -2 },
-  { label: 'Italic', desc: '*text*', icon: 'I', insert: '**', cursorOffset: -1 },
-  { label: 'Bullet List', desc: '- item', icon: '•', insert: '- ' },
-  { label: 'Numbered List', desc: '1. item', icon: '1.', insert: '1. ' },
-  { label: 'Code Block', desc: '```', icon: '</>', insert: '```\n\n```', cursorOffset: -4 },
-  { label: 'Blockquote', desc: '>', icon: '"', insert: '> ' },
-  { label: 'Table', desc: '| col | col |', icon: '⊞', insert: '| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n|  |  |  |\n' },
-  { label: 'Horizontal Rule', desc: '---', icon: '—', insert: '\n---\n' },
-  { label: 'Link', desc: '[text](url)', icon: '🔗', insert: '[]()', cursorOffset: -1 },
-  { label: 'Image', desc: '![alt](url)', icon: '🖼', insert: '![]()', cursorOffset: -1 },
-  { label: 'Math Inline', desc: '$...$', icon: '∑', insert: '$$', cursorOffset: -1 },
-  { label: 'Math Block', desc: '$$...$$', icon: '∫', insert: '$$\n\n$$', cursorOffset: -3 },
-];
+function setCMViewMode(phase, mode) {
+  const editorId = phase + 'Editor';
+  const previewId = phase + 'Preview';
 
-function showSlashMenu(view) {
-  const menu = document.getElementById('slashMenu');
-  const coords = view.coordsAtPos(view.state.selection.main.head);
-  if (!coords) return;
-  
-  menu.innerHTML = SLASH_COMMANDS.map((cmd, i) =>
-    `<div class="slash-item" data-idx="${i}">\
-      <span style="font-size:13px">${cmd.icon}</span>\
-      <span class="slash-label">${cmd.label}</span>\
-      <span class="slash-desc">${cmd.desc}</span>\
-    </div>`
-  ).join('');
-  
-  menu.style.display = 'block';
-  menu.style.top = (coords.bottom + 4) + 'px';
-  menu.style.left = coords.left + 'px';
-  window.slashMenuSel = 0;
-  
-  menu.querySelector('.slash-item')?.classList.add('selected');
-  
-  menu.querySelectorAll('.slash-item').forEach(item => {
-    item.addEventListener('click', () => {
-      const idx = parseInt(item.dataset.idx);
-      executeSlashCommand(idx);
-    });
-  });
-}
+  CM_VIEW_MODES[editorId] = mode;
+  const editorEl = document.getElementById(editorId);
+  const previewEl = document.getElementById(previewId);
 
-function hideSlashMenu() {
-  document.getElementById('slashMenu').style.display = 'none';
-  window.slashMenuSel = -1;
-}
+  if (!editorEl || !previewEl) return;
 
-function executeSlashCommand(idx) {
-  const cmd = SLASH_COMMANDS[idx];
-  if (!cmd || !cmView) return;
-  
-  const pos = cmView.state.selection.main.head;
-  const line = cmView.state.doc.lineAt(pos);
-  const textBefore = cmView.state.doc.sliceString(line.from, pos);
-  
-  // Remove the '/' that triggered the menu
-  const slashPos = textBefore.lastIndexOf('/');
-  const from = slashPos >= 0 ? line.from + slashPos : pos;
-  
-  cmView.dispatch({
-    changes: { from, to: pos, insert: cmd.insert },
-    selection: cmd.cursorOffset ? { anchor: from + cmd.insert.length + cmd.cursorOffset } : undefined,
-  });
-  
-  hideSlashMenu();
-  cmView.focus();
-}
-
-// ═══════════ Editor Change Handler ═══════════
-let _changeTimer = null;
-function onEditorChange() {
-  clearTimeout(_changeTimer);
-  _changeTimer = setTimeout(() => {
-    if (window.currentMode === 'split') renderPreview();
-    updateStatusBar();
-    scheduleAutoSave();
-  }, 300);
-}
-
-function getEditorContent() {
-  return cmView ? cmView.state.doc.toString() : '';
-}
-
-function setEditorContent(content) {
-  if (!cmView) return;
-  cmView.dispatch({
-    changes: { from: 0, to: cmView.state.doc.length, insert: content || '' },
-  });
-}
-
-// ═══════════ Preview Rendering ═══════════
-function renderPreview() {
-  const content = getEditorContent();
-  const previewEl = document.getElementById('previewContent');
-  
-  if (!content.trim()) {
-    previewEl.innerHTML = '<p style="color:var(--muted);font-style:italic;text-align:center;padding:40px">Nothing to preview yet. Start writing in the editor.</p>';
-    return;
+  switch(mode) {
+    case 'edit':
+      editorEl.style.display = '';
+      previewEl.classList.remove('visible');
+      if (cmEditors[editorId]) cmEditors[editorId].requestMeasure();
+      break;
+    case 'preview':
+      editorEl.style.display = 'none';
+      previewEl.classList.add('visible');
+      renderPhasePreview(phase);
+      break;
+    case 'split':
+      editorEl.style.display = '';
+      editorEl.style.flex = '1';
+      previewEl.classList.add('visible');
+      previewEl.style.flex = '1';
+      if (cmEditors[editorId]) cmEditors[editorId].requestMeasure();
+      renderPhasePreview(phase);
+      break;
   }
-  
-  // Parse slides for present mode
-  window.presentSlides = content.split(/\n---\n/).map(s => s.trim()).filter(Boolean);
-  if (window.presentSlides.length === 0) window.presentSlides = [content.trim()];
-  
+}
+window.setCMViewMode = setCMViewMode;
+
+function renderPhasePreview(phase) {
+  const editorId = phase + 'Editor';
+  const previewId = phase + 'Preview';
+  const view = cmEditors[editorId];
+  const previewEl = document.getElementById(previewId);
+  if (!view || !previewEl) return;
+  const content = view.state.doc.toString();
   let html;
-  try {
-    html = marked.parse(content);
-  } catch(e) {
-    html = '<p style="color:var(--red)">Error rendering markdown: ' + e.message + '</p>';
-  }
-  
-  previewEl.innerHTML = html;
-  
-  // Render KaTeX
+  try { html = marked.parse(content); } catch(e) { html = '<p style="color:var(--red)">Render error</p>'; }
+  previewEl.innerHTML = `<div class="preview-content">${html}</div>`;
+  // KaTeX
   try {
     renderMathInElement(previewEl, {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$', right: '$', display: false },
-      ],
-      throwOnError: false,
-    });
-  } catch(e) {
-    console.warn('KaTeX render error:', e);
-  }
-}
-
-// ═══════════ Present Mode ═══════════
-function togglePresent() {
-  const overlay = document.getElementById('presentOverlay');
-  if (overlay.classList.contains('active')) {
-    overlay.classList.remove('active');
-    document.body.style.overflow = '';
-    return;
-  }
-  
-  // Build slides
-  const content = getEditorContent();
-  window.presentSlides = content.split(/\n---\n/).map(s => s.trim()).filter(Boolean);
-  if (window.presentSlides.length === 0) window.presentSlides = [content.trim() || '# No Content'];
-  
-  window.presentSlideIdx = 0;
-  overlay.classList.add('active');
-  document.body.style.overflow = 'hidden';
-  renderPresentSlide();
-}
-
-function renderPresentSlide() {
-  const slideEl = document.getElementById('presentSlide');
-  const content = window.presentSlides[window.presentSlideIdx] || '';
-  
-  let html;
-  try {
-    html = marked.parse(content);
-  } catch(e) {
-    html = '<p>Error</p>';
-  }
-  
-  slideEl.innerHTML = html;
-  
-  // KaTeX in present mode
-  try {
-    renderMathInElement(slideEl, {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '$', right: '$', display: false },
-      ],
+      delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
       throwOnError: false,
     });
   } catch(e) {}
-  
-  // Update hint
-  const hint = document.querySelector('.present-hint');
-  if (hint) {
-    hint.textContent = `Slide ${window.presentSlideIdx + 1} / ${window.presentSlides.length}  ·  ← → to navigate  ·  Esc to exit`;
+}
+
+function getCMContent(phase) {
+  const editorId = phase + 'Editor';
+  const view = cmEditors[editorId];
+  return view ? view.state.doc.toString() : '';
+}
+
+function setCMContent(phase, content) {
+  const editorId = phase + 'Editor';
+  const view = cmEditors[editorId];
+  if (view) {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content || '' } });
   }
 }
 
-function presentNext() {
-  if (window.presentSlideIdx < window.presentSlides.length - 1) {
-    window.presentSlideIdx++;
-    renderPresentSlide();
+async function autosaveCurrentPhase() {
+  const content = getCMContent(activePhase);
+  const pageId = `phase_${activePhase}`;
+  await dbPut('settings', { key: pageId, value: content });
+  // Also save to pages if present
+  const pages = await _dbGetAll('pages') || [];
+  const existing = pages.find(p => p.section === activePhase.toUpperCase());
+  if (existing) {
+    existing.content = content;
+    existing.updatedAt = new Date().toISOString();
+    await dbPut('pages', existing);
   }
 }
 
-function presentPrev() {
-  if (window.presentSlideIdx > 0) {
-    window.presentSlideIdx--;
-    renderPresentSlide();
+async function loadPhaseContent(phase) {
+  const pageId = `phase_${phase}`;
+  const setting = await dbGet('settings', pageId);
+  const content = setting?.value || '';
+  setCMContent(phase, content);
+}
+
+// ═══════ Phase Content Refresh ═══════
+function refreshPhaseContent(phase) {
+  switch(phase) {
+    case 'issue': refreshIssuePhase(); break;
+    case 'literature': refreshLiteraturePhase(); break;
+    case 'goals': refreshGoalsPhase(); break;
+    case 'experimental': refreshExperimentalPhase(); break;
+    case 'results': refreshResultsPhase(); break;
+    case 'paper': refreshPaperPhase(); break;
   }
 }
 
-// ═══════════ File Management ═══════════
-async function openFile(fileData) {
-  window.currentFile = fileData;
-  setEditorContent(fileData.content || '');
-  
-  const title = fileData.title || 'Untitled';
-  document.getElementById('docTitle').textContent = title;
-  document.getElementById('statusPath').textContent = (fileData.section || '') + ' / ' + title;
-  
-  updateStatusBar();
+// ISSUE
+async function refreshIssuePhase() {
+  await loadPhaseContent('issue');
 }
 
-function addNewPage() {
-  const section = prompt('Section name (e.g., Literature, Experimental):');
-  if (!section) return;
-  const title = prompt('Page title:');
-  if (!title) return;
-  
-  const fileData = {
-    section: section,
-    title: title,
-    content: '# ' + title + '\n\nStart writing here...\n',
-    createdAt: new Date().toISOString(),
-  };
-  
-  dbPut('pages', fileData).then(id => {
-    fileData.id = id;
-    openFile(fileData);
-    buildFilesTree();
-    toast('Page created ✓');
-  });
-}
-
-async function saveCurrentFile() {
-  if (!window.currentFile || !cmView) return;
-  
-  const content = getEditorContent();
-  window.currentFile.content = content;
-  
-  try {
-    await dbPut('pages', window.currentFile);
-    document.getElementById('statusSync').textContent = '💾 Saved';
-    updateStatusBar();
-  } catch(e) {
-    document.getElementById('statusSync').textContent = '⚠ Save failed';
-    console.error('Save error:', e);
+// LITERATURE
+window._litCache = [];
+async function refreshLiteraturePhase() {
+  window._litCache = await dbGetAll('literature') || [];
+  const container = document.getElementById('litCards');
+  if (window._litCache.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:16px">No references yet. Click "+ Add Reference" to add one.</p>';
+  } else {
+    container.innerHTML = window._litCache.map((l, i) => `
+      <div class="lit-card">
+        <div class="lit-title">${escHtml(l.title || 'Untitled')}</div>
+        <div class="lit-meta">${escHtml(l.authors || '')} · ${escHtml(l.journal || '')} · ${escHtml(l.year || '')} ${l.doi ? '· DOI: ' + escHtml(l.doi) : ''}</div>
+        ${l.notes ? `<div class="lit-notes">${l.notes}</div>` : ''}
+        <div class="lit-actions">
+          <button class="btn sm" onclick="editLit(${l.id})">✏️ Edit</button>
+          <button class="btn sm" onclick="deleteLitById(${l.id})">🗑</button>
+        </div>
+      </div>
+    `).join('');
+    checkPhaseUnlocks();
   }
 }
 
-let _autoSaveTimer = null;
-function scheduleAutoSave() {
-  clearTimeout(_autoSaveTimer);
-  _autoSaveTimer = setTimeout(() => {
-    document.getElementById('statusSync').textContent = '🔄 Saving...';
-    saveCurrentFile();
-  }, 2000);
-}
-
-// ═══════════ Status Bar ═══════════
-function updateStatusBar() {
-  const content = getEditorContent();
-  const words = content.trim() ? content.trim().split(/\s+/).length : 0;
-  document.getElementById('statusWords').textContent = words + ' words';
-}
-
-// ═══════════ File Tree ═══════════
-async function buildFilesTree() {
-  const tree = document.getElementById('filesTree');
-  const pages = await dbGetAll('pages') || [];
-  
-  // Group by section
-  const sections = {};
-  for (const p of pages) {
-    const sec = p.section || 'Uncategorized';
-    if (!sections[sec]) sections[sec] = [];
-    sections[sec].push(p);
-  }
-
-  const SEC_ORDER = ['ISSUE', 'Literature', 'GOALS', 'EXPERIMENTAL', 'RESULTS', 'PAPER', 'Resources', 'Output'];
-
-  let html = '';
-  
-  // Order sections
-  const ordered = [];
-  for (const sec of SEC_ORDER) {
-    if (sections[sec]) ordered.push([sec, sections[sec]]);
-  }
-  for (const [sec, pgs] of Object.entries(sections)) {
-    if (!SEC_ORDER.includes(sec)) ordered.push([sec, pgs]);
-  }
-
-  for (const [sec, pgs] of ordered) {
-    const icon = sec === 'ISSUE' ? '🎯' : sec === 'Literature' ? '📚' :
-                 sec === 'GOALS' ? '🏁' : sec === 'EXPERIMENTAL' ? '🔬' :
-                 sec === 'RESULTS' ? '📊' : sec === 'PAPER' ? '📝' :
-                 sec === 'Resources' ? '🔧' : sec === 'Output' ? '📤' : '📄';
-    
-    html += `<div class="tree-section">${icon} ${escHtml(sec)}</div>`;
-    pgs.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-    for (const p of pgs) {
-      const isActive = window.currentFile && window.currentFile.id === p.id;
-      html += `<div class="tree-item${isActive ? ' active' : ''}" data-id="${p.id}" onclick="treeItemClick(${p.id})" oncontextmenu="treeItemContext(event, ${p.id})">
-        <span class="tree-icon">${sec === 'EXPERIMENTAL' ? '🧪' : '📝'}</span>
-        ${escHtml(p.title || 'Untitled')}
-      </div>`;
-    }
-  }
-
-  if (!html) {
-    html = '<div style="padding:16px;font-size:11px;color:var(--muted);text-align:center">No pages yet. Click + to create one.</div>';
-  }
-
-  tree.innerHTML = html;
-}
-
-function escHtml(s) {
-  return (typeof s === 'string' ? s : String(s || ''))
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-async function treeItemClick(id) {
-  const page = await dbGet('pages', id);
-  if (page) {
-    await openFile(page);
-    buildFilesTree();
+// GOALS
+window._goalCache = [];
+async function refreshGoalsPhase() {
+  window._goalCache = await dbGetAll('goals') || [];
+  const container = document.getElementById('goalsList');
+  if (window._goalCache.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:16px">No goals defined. Click "+ Add Goal" to define research objectives.</p>';
+  } else {
+    container.innerHTML = window._goalCache.map((g, i) => `
+      <div class="goal-item">
+        <span class="goal-num">${g.goalNumber || i + 1}</span>
+        <span class="goal-text">${escHtml(g.description || '')}</span>
+        <span class="goal-kpi">KPI: ${escHtml(g.kpi || '—')}</span>
+        <span class="goal-status ${g.status === 'Pending' ? 'pending' : ''}">${escHtml(g.status || 'In Progress')}</span>
+        <button class="btn sm" onclick="editGoal(${g.id})">✏️</button>
+        <button class="btn sm" onclick="deleteGoal(${g.id})">🗑</button>
+      </div>
+    `).join('');
+    checkPhaseUnlocks();
   }
 }
 
-function treeItemContext(event, id) {
-  event.preventDefault();
-  const action = confirm('Delete this page?');
-  if (action) {
-    dbDelete('pages', id).then(() => {
-      if (window.currentFile && window.currentFile.id === id) {
-        window.currentFile = null;
-        setEditorContent('');
-        document.getElementById('docTitle').textContent = 'Untitled';
-        document.getElementById('statusPath').textContent = 'No file open';
-      }
-      buildFilesTree();
-      toast('Page deleted');
+// EXPERIMENTAL
+window._stepCache = [];
+let activeStepId = null;
+
+async function refreshExperimentalPhase() {
+  window._stepCache = await dbGetAll('steps') || [];
+  // Sort by step number
+  window._stepCache.sort((a, b) => (a.stepNumber || 0) - (b.stepNumber || 0));
+
+  const navEl = document.getElementById('stepNav');
+  navEl.innerHTML = window._stepCache.map((s, i) => {
+    const num = s.stepNumber || (i + 1);
+    return `<button class="step-nav-btn ${s.id === activeStepId ? 'active' : ''}" onclick="selectStep(${s.id})">${num}. ${escHtml(s.title || 'Step ' + num)}</button>`;
+  }).join('') + '<button class="add-step-btn" onclick="showStepModal()" title="Add Step">➕</button>';
+
+  // Auto-select first step or keep current
+  if (!activeStepId && window._stepCache.length > 0) {
+    activeStepId = window._stepCache[0].id;
+  }
+  if (activeStepId) {
+    const stillExists = window._stepCache.find(s => s.id === activeStepId);
+    if (!stillExists && window._stepCache.length > 0) activeStepId = window._stepCache[0].id;
+    if (stillExists || window._stepCache.length > 0) renderActiveStep();
+  } else {
+    document.getElementById('activeStepContent').innerHTML = '<p style="color:var(--muted);padding:16px">No experimental steps yet. Click "+" to add your first step.</p>';
+  }
+
+  checkPhaseUnlocks();
+  refreshParamMatrix();
+}
+window.refreshExperimentalPhase = refreshExperimentalPhase;
+
+function selectStep(id) {
+  activeStepId = id;
+  refreshExperimentalPhase();
+}
+window.selectStep = selectStep;
+
+function renderActiveStep() {
+  const step = window._stepCache.find(s => s.id === activeStepId);
+  if (!step) return;
+  const el = document.getElementById('activeStepContent');
+  el.innerHTML = `
+    <h4 style="margin-bottom:10px">${escHtml(step.title || 'Step')}</h4>
+    <div class="comic-grid">
+      <div class="comic-panel">
+        <div class="cp-num">①</div>
+        <div class="cp-title">Fixed Parameters</div>
+        <div class="cp-body" id="cpFixed" contenteditable="true" oninput="comicPanelChanged()">${step.fixedParams || '<i>Click to edit…</i>'}</div>
+      </div>
+      <div class="comic-panel">
+        <div class="cp-num">②</div>
+        <div class="cp-title">Variable Parameters</div>
+        <div class="cp-body" id="cpVar" contenteditable="true" oninput="comicPanelChanged()">${step.varParams || '<i>Click to edit…</i>'}</div>
+      </div>
+      <div class="comic-panel">
+        <div class="cp-num">③</div>
+        <div class="cp-title">Detection</div>
+        <div class="cp-body" id="cpDetect" contenteditable="true" oninput="comicPanelChanged()">${step.detection || '<i>Click to edit…</i>'}</div>
+      </div>
+      <div class="comic-panel">
+        <div class="cp-num">④</div>
+        <div class="cp-title">Benchmark</div>
+        <div class="cp-body" id="cpBench" contenteditable="true" oninput="comicPanelChanged()">${step.benchmark || '<i>Click to edit…</i>'}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <h4 style="margin:0 0 6px">🔗 Link Skills</h4>
+      <div class="skill-checkboxes" id="skillCheckboxes">
+        <label><input type="checkbox" value="EIS-NyquistBode" onchange="skillCheckChanged()"> EIS-NyquistBode</label>
+        <label><input type="checkbox" value="Raman-Carbon" onchange="skillCheckChanged()"> Raman-Carbon</label>
+        <label><input type="checkbox" value="XRD-Analysis" onchange="skillCheckChanged()"> XRD-Analysis</label>
+        <label><input type="checkbox" value="SEM-ParticleSize" onchange="skillCheckChanged()"> SEM-ParticleSize</label>
+        <label><input type="checkbox" value="CV-ECSA" onchange="skillCheckChanged()"> CV-ECSA</label>
+        <label><input type="checkbox" value="LSV-Tafel" onchange="skillCheckChanged()"> LSV-Tafel</label>
+      </div>
+      ${step.linkedSkills ? `<div style="font-size:10px;color:var(--muted)">Linked: ${step.linkedSkills}</div>` : ''}
+      <button class="btn prim sm" onclick="runSkill(${step.id})" style="margin-top:6px">▶ Run Skill</button>
+      <div id="skillProgress" style="display:none;margin-top:4px" class="progress-bar"></div>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <h4 style="margin:0 0 6px">💬 Discussion</h4>
+      <textarea id="stepDiscussion" rows="4" placeholder="Discussion of results..." oninput="stepDiscussionChanged()">${step.discussion || ''}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn grn" onclick="stepNextAction(${step.id}, 'proceed')">✅ Proceed</button>
+      <button class="btn red" onclick="stepNextAction(${step.id}, 'revise')">❌ Revise</button>
+      <button class="btn" onclick="deleteStep(${step.id})" style="margin-left:auto">🗑 Delete Step</button>
+    </div>
+    <div id="stepResultsArea" style="margin-top:12px"></div>
+  `;
+
+  // Restore skill checkboxes
+  if (step.linkedSkills) {
+    const skills = step.linkedSkills.split(',').map(s => s.trim());
+    skills.forEach(skill => {
+      const cb = document.querySelector(`#skillCheckboxes input[value="${skill}"]`);
+      if (cb) cb.checked = true;
     });
   }
+
+  // Render step results if any
+  renderStepResults(step);
 }
 
-// ═══════════ Add Step ═══════════
-function addNewStep() {
-  const title = prompt('Step title (e.g., APCVD Coating):');
-  if (!title) return;
-  
-  const content = `# ${title}\n\n## ① Fixed Parameters\n\n- Parameter 1: value\n- Parameter 2: value\n\n## ② Variable Parameters\n\n- Parameter A: value range\n\n## ③ Detection\n\n- Method 1\n- Method 2\n\n## ④ Benchmark\n\n- Target: value\n- ✅ Result: \n`;
-  
-  const fileData = {
-    section: 'EXPERIMENTAL',
-    title: title,
-    content: content,
-    createdAt: new Date().toISOString(),
-  };
-  
-  dbPut('pages', fileData).then(id => {
-    fileData.id = id;
-    openFile(fileData);
-    buildFilesTree();
-    buildExperimentsTree();
-    toast('Step created ✓');
+let _comicSaveTimer = null;
+function comicPanelChanged() {
+  clearTimeout(_comicSaveTimer);
+  _comicSaveTimer = setTimeout(saveComicPanels, 1200);
+}
+window.comicPanelChanged = comicPanelChanged;
+
+async function saveComicPanels() {
+  if (!activeStepId) return;
+  const step = window._stepCache.find(s => s.id === activeStepId);
+  if (!step) return;
+  step.fixedParams = document.getElementById('cpFixed')?.innerHTML || '';
+  step.varParams = document.getElementById('cpVar')?.innerHTML || '';
+  step.detection = document.getElementById('cpDetect')?.innerHTML || '';
+  step.benchmark = document.getElementById('cpBench')?.innerHTML || '';
+  step.updatedAt = new Date().toISOString();
+  await dbPut('steps', step);
+}
+window.saveComicPanels = saveComicPanels;
+
+function skillCheckChanged() {
+  if (!activeStepId) return;
+  const cbs = document.querySelectorAll('#skillCheckboxes input:checked');
+  const skills = Array.from(cbs).map(cb => cb.value).join(', ');
+  const step = window._stepCache.find(s => s.id === activeStepId);
+  if (step) { step.linkedSkills = skills; dbPut('steps', step); }
+}
+window.skillCheckChanged = skillCheckChanged;
+
+async function stepDiscussionChanged() {
+  clearTimeout(window._discussionTimer);
+  window._discussionTimer = setTimeout(async () => {
+    if (!activeStepId) return;
+    const step = window._stepCache.find(s => s.id === activeStepId);
+    if (step) {
+      step.discussion = document.getElementById('stepDiscussion')?.value || '';
+      step.updatedAt = new Date().toISOString();
+      await dbPut('steps', step);
+    }
+  }, 1200);
+}
+window.stepDiscussionChanged = stepDiscussionChanged;
+
+async function stepNextAction(id, action) {
+  const step = window._stepCache.find(s => s.id === id);
+  if (!step) return;
+  step.nextAction = action;
+  step.status = action === 'proceed' ? 'completed' : 'needs_revision';
+  step.updatedAt = new Date().toISOString();
+  await dbPut('steps', step);
+  toast(action === 'proceed' ? 'Step approved ✓' : 'Step marked for revision');
+  refreshExperimentalPhase();
+}
+window.stepNextAction = stepNextAction;
+
+async function runSkill(stepId) {
+  const step = window._stepCache.find(s => s.id === stepId);
+  if (!step) return;
+  const skills = step.linkedSkills || 'EIS-NyquistBode';
+  const progressEl = document.getElementById('skillProgress');
+  progressEl.style.display = 'block';
+  progressEl.textContent = `⏳ ${skills}: detecting columns...`;
+
+  // Simulate processing delay
+  await new Promise(r => setTimeout(r, 1500));
+  progressEl.textContent = `⏳ ${skills}: analyzing data...`;
+  await new Promise(r => setTimeout(r, 1000));
+  progressEl.textContent = `✅ ${skills}: complete`;
+
+  // Mock result — generate a Nyquist plot
+  step.results = step.results || [];
+  step.results.push({
+    type: 'chart',
+    skill: skills.split(',')[0].trim(),
+    timestamp: new Date().toISOString(),
+    chartType: 'scatter',
+    chartData: generateMockNyquistData(),
+    summary: `Mock ${skills} analysis completed. Sample Nyquist plot generated.`
   });
+  step.updatedAt = new Date().toISOString();
+  await dbPut('steps', step);
+
+  // Refresh
+  await refreshExperimentalPhase();
+  renderStepResults(step);
+  toast('Skill run complete ✓');
+}
+window.runSkill = runSkill;
+
+function generateMockNyquistData() {
+  const labels = [];
+  const zre = [];
+  const zim = [];
+  // Generate a semicircle Nyquist plot
+  for (let i = 0; i <= 40; i++) {
+    const t = (i / 40) * Math.PI;
+    const r = 150;
+    labels.push(i);
+    zre.push({ x: 80 + r * Math.cos(t), y: r * Math.sin(t) });
+  }
+  return {
+    labels: labels,
+    datasets: [{
+      label: 'EIS Nyquist',
+      data: zre,
+      borderColor: '#2c5f8a',
+      backgroundColor: '#2c5f8a',
+      showLine: true,
+      tension: 0.4,
+      pointRadius: 2,
+    }],
+  };
 }
 
-async function buildExperimentsTree() {
-  const tree = document.getElementById('experimentsTree');
-  const pages = await dbGetAll('pages') || [];
-  const expPages = pages.filter(p => p.section === 'EXPERIMENTAL');
-  
-  if (expPages.length === 0) {
-    tree.innerHTML = '<div style="padding:16px;font-size:11px;color:var(--muted);text-align:center">No experiments yet.</div>';
+function renderStepResults(step) {
+  const area = document.getElementById('stepResultsArea');
+  if (!area) return;
+  if (!step.results || step.results.length === 0) {
+    area.innerHTML = '<p style="font-size:11px;color:var(--muted);margin-top:8px">No results yet. Run a Skill to generate plots.</p>';
     return;
   }
-  
-  tree.innerHTML = expPages.map(p =>
-    `<div class="tree-item" onclick="treeItemClick(${p.id})">
-      <span class="tree-icon">🧪</span>${escHtml(p.title)}
-    </div>`
-  ).join('');
+  area.innerHTML = '<h4 style="margin-bottom:8px">📊 Results</h4>' + step.results.map((r, i) => `
+    <div class="result-card">
+      <h5 style="font-size:11px;margin-bottom:4px">${escHtml(r.skill || 'Analysis')}</h5>
+      <canvas id="stepChart_${step.id}_${i}" style="max-height:200px"></canvas>
+      <p style="font-size:10px;color:var(--muted);margin-top:4px">${escHtml(r.summary || '')}</p>
+    </div>
+  `).join('');
+
+  // Render charts
+  setTimeout(() => {
+    step.results.forEach((r, i) => {
+      const canvas = document.getElementById(`stepChart_${step.id}_${i}`);
+      if (canvas && r.chartData && window.Chart) {
+        new Chart(canvas, { type: r.chartType || 'scatter', data: r.chartData, options: { responsive: true, maintainAspectRatio: false } });
+      }
+    });
+  }, 200);
 }
 
-// ═══════════ Upload Data ═══════════
+// Parameter Matrix
+async function refreshParamMatrix() {
+  const container = document.getElementById('paramMatrix');
+  const rows = await dbGetAll('param_matrix') || [];
+  if (rows.length === 0) {
+    // Default columns
+    rows.push({ row: 1, sampleName: 'Ni-850', param1: '850', param2: '30', param3: '1:4', dataFiles: '' });
+    rows.push({ row: 2, sampleName: 'Ni-900', param1: '900', param2: '30', param3: '1:4', dataFiles: '' });
+    rows.push({ row: 3, sampleName: 'Ni-970', param1: '970', param2: '30', param3: '1:4', dataFiles: '' });
+  }
+  const params = ['T/°C', 't/min', 'CH4:Ar'];
+  let html = '<table><thead><tr><th>Sample Name</th>';
+  params.forEach(p => html += `<th>${p}</th>`);
+  html += '<th>Data Files</th></tr></thead><tbody>';
+  rows.forEach((r, i) => {
+    html += `<tr>
+      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'sampleName', this.textContent)" data-row="${i}">${escHtml(r.sampleName || '')}</td>
+      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param1', this.textContent)">${escHtml(r.param1 || '')}</td>
+      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param2', this.textContent)">${escHtml(r.param2 || '')}</td>
+      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param3', this.textContent)">${escHtml(r.param3 || '')}</td>
+      <td>${r.dataFiles ? escHtml(r.dataFiles) : '<button class="btn sm" onclick="uploadDataFile()">📂 Upload</button>'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+window._paramEditQueue = {};
+async function updateParamCell(id, field, value) {
+  const key = `${id}_${field}`;
+  window._paramEditQueue[key] = { id, field, value };
+  clearTimeout(window._paramEditTimer);
+  window._paramEditTimer = setTimeout(async () => {
+    for (const k in window._paramEditQueue) {
+      const { id, field, value } = window._paramEditQueue[k];
+      if (id) {
+        const row = await dbGet('param_matrix', id);
+        if (row) { row[field] = value; await dbPut('param_matrix', row); }
+      }
+    }
+    window._paramEditQueue = {};
+  }, 800);
+}
+window.updateParamCell = updateParamCell;
+
+async function addParamColumn() {
+  const rows = await dbGetAll('param_matrix') || [];
+  if (rows.length === 0) {
+    await dbPut('param_matrix', { row: 1, sampleName: 'Sample 1', param1: '', param2: '', param3: '', dataFiles: '' });
+  }
+  toast('Column added (extend schema)');
+  refreshParamMatrix();
+}
+window.addParamColumn = addParamColumn;
+
+async function addParamRow() {
+  const rows = await dbGetAll('param_matrix') || [];
+  const nextRow = rows.length + 1;
+  await dbPut('param_matrix', { row: nextRow, sampleName: `Sample ${nextRow}`, param1: '', param2: '', param3: '', dataFiles: '' });
+  refreshParamMatrix();
+  toast('Row added ✓');
+}
+window.addParamRow = addParamRow;
+
 function uploadDataFile() {
   const input = document.createElement('input');
   input.type = 'file';
-  input.accept = '.csv,.txt,.json';
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const text = await file.text();
-    const pageData = {
-      section: 'Data',
-      title: file.name,
-      content: '```\n' + text.substring(0, 50000) + '\n```',
-      createdAt: new Date().toISOString(),
-    };
-    const id = await dbPut('pages', pageData);
-    pageData.id = id;
-    openFile(pageData);
-    buildFilesTree();
-    toast('Data file imported ✓');
-  };
+  input.accept = '.csv,.txt';
+  input.onchange = () => toast('File selected (mock upload)');
   input.click();
 }
+window.uploadDataFile = uploadDataFile;
 
-// ═══════════ AI Chat ═══════════
+// ═══════ Step Modal ═══════
+function showStepModal() {
+  document.getElementById('stepModal').classList.add('show');
+  document.getElementById('stepTitle').value = '';
+  document.getElementById('stepFixed').value = '';
+  document.getElementById('stepVar').value = '';
+  document.getElementById('stepDetect').value = '';
+  document.getElementById('stepBench').value = '';
+}
+window.showStepModal = showStepModal;
+function closeStepModal() { document.getElementById('stepModal').classList.remove('show'); }
+window.closeStepModal = closeStepModal;
+
+async function saveStep() {
+  const title = document.getElementById('stepTitle').value.trim();
+  if (!title) { toast('Title required', 'var(--red)'); return; }
+  const steps = await dbGetAll('steps') || [];
+  const stepNumber = steps.length + 1;
+  const step = {
+    stepNumber: stepNumber,
+    title: title,
+    fixedParams: nl2br(document.getElementById('stepFixed').value),
+    varParams: nl2br(document.getElementById('stepVar').value),
+    detection: nl2br(document.getElementById('stepDetect').value),
+    benchmark: nl2br(document.getElementById('stepBench').value),
+    status: 'planned',
+    createdAt: new Date().toISOString(),
+  };
+  const id = await dbPut('steps', step);
+  activeStepId = id;
+  closeStepModal();
+  await refreshExperimentalPhase();
+  toast('Step added ✓');
+}
+window.saveStep = saveStep;
+
+async function deleteStep(id) {
+  if (!confirm('Delete this step?')) return;
+  await dbDelete('steps', id);
+  if (activeStepId === id) activeStepId = null;
+  await refreshExperimentalPhase();
+  toast('Step deleted');
+}
+window.deleteStep = deleteStep;
+
+function nl2br(text) {
+  return (text || '').split('\n').map(l => l.trim()).filter(Boolean).join('<br>');
+}
+
+// ═══════ Literature Modal ═══════
+function showLitForm(id) {
+  document.getElementById('litModal').classList.add('show');
+  document.getElementById('litModalTitle').textContent = id ? '✏️ Edit Reference' : '📚 Add Reference';
+  document.getElementById('litEditId').value = id || '';
+  document.getElementById('litDeleteBtn').style.display = id ? 'inline-block' : 'none';
+  if (id) {
+    const lit = window._litCache?.find(l => l.id === id);
+    if (lit) {
+      document.getElementById('litTitle').value = lit.title || '';
+      document.getElementById('litAuthors').value = lit.authors || '';
+      document.getElementById('litJournal').value = lit.journal || '';
+      document.getElementById('litYear').value = lit.year || '';
+      document.getElementById('litDoi').value = lit.doi || '';
+      document.getElementById('litNotes').value = lit.notes || '';
+    }
+  } else {
+    document.getElementById('litTitle').value = '';
+    document.getElementById('litAuthors').value = '';
+    document.getElementById('litJournal').value = '';
+    document.getElementById('litYear').value = '';
+    document.getElementById('litDoi').value = '';
+    document.getElementById('litNotes').value = '';
+  }
+}
+window.showLitForm = showLitForm;
+function closeLitModal() { document.getElementById('litModal').classList.remove('show'); }
+window.closeLitModal = closeLitModal;
+
+async function saveLit() {
+  const id = document.getElementById('litEditId').value;
+  const data = {
+    title: document.getElementById('litTitle').value.trim(),
+    authors: document.getElementById('litAuthors').value.trim(),
+    journal: document.getElementById('litJournal').value.trim(),
+    year: document.getElementById('litYear').value.trim(),
+    doi: document.getElementById('litDoi').value.trim(),
+    notes: document.getElementById('litNotes').value.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (!data.title) { toast('Title required', 'var(--red)'); return; }
+
+  if (id) {
+    data.id = parseInt(id);
+    const existing = window._litCache.find(l => l.id === data.id);
+    if (existing) data.createdAt = existing.createdAt;
+  } else {
+    data.createdAt = new Date().toISOString();
+  }
+  await dbPut('literature', data);
+  closeLitModal();
+  await refreshLiteraturePhase();
+  toast('Reference saved ✓');
+}
+window.saveLit = saveLit;
+
+async function deleteLit() {
+  const id = parseInt(document.getElementById('litEditId').value);
+  if (!id || !confirm('Delete?')) return;
+  await dbDelete('literature', id);
+  closeLitModal();
+  await refreshLiteraturePhase();
+  toast('Deleted');
+}
+window.deleteLit = deleteLit;
+async function deleteLitById(id) { if(confirm('Delete?')) { await dbDelete('literature', id); await refreshLiteraturePhase(); toast('Deleted'); } }
+window.deleteLitById = deleteLitById;
+function editLit(id) { showLitForm(id); }
+window.editLit = editLit;
+
+// ═══════ Goals ═══════
+async function addGoal() {
+  const desc = prompt('Goal description:');
+  if (!desc) return;
+  const kpi = prompt('KPI / target value:');
+  const goals = await dbGetAll('goals') || [];
+  await dbPut('goals', {
+    goalNumber: goals.length + 1,
+    description: desc,
+    kpi: kpi || '',
+    status: 'In Progress',
+    createdAt: new Date().toISOString(),
+  });
+  await refreshGoalsPhase();
+  toast('Goal added ✓');
+}
+window.addGoal = addGoal;
+
+async function editGoal(id) {
+  const goal = window._goalCache.find(g => g.id === id);
+  if (!goal) return;
+  const desc = prompt('Edit description:', goal.description);
+  if (desc === null) return;
+  goal.description = desc;
+  const kpi = prompt('Edit KPI:', goal.kpi || '');
+  if (kpi !== null) goal.kpi = kpi;
+  goal.updatedAt = new Date().toISOString();
+  await dbPut('goals', goal);
+  await refreshGoalsPhase();
+  toast('Goal updated ✓');
+}
+window.editGoal = editGoal;
+
+async function deleteGoal(id) {
+  if (!confirm('Delete this goal?')) return;
+  await dbDelete('goals', id);
+  await refreshGoalsPhase();
+  toast('Deleted');
+}
+window.deleteGoal = deleteGoal;
+
+// ═══════ Results Phase ═══════
+async function refreshResultsPhase() {
+  const steps = await dbGetAll('steps') || [];
+  const container = document.getElementById('resultsGrid');
+
+  const stepsWithResults = steps.filter(s => s.results && s.results.length > 0);
+  if (stepsWithResults.length === 0) {
+    container.innerHTML = '<div class="card"><p style="font-size:11px;color:var(--muted)">No results yet. Run skills on experimental steps to generate results.</p></div>';
+    return;
+  }
+
+  container.innerHTML = stepsWithResults.map(step => {
+    const resultsHtml = step.results.map((r, i) => `
+      <div class="result-card">
+        <h5 style="font-size:11px;margin-bottom:4px">${escHtml(step.title)} — ${escHtml(r.skill || '')}</h5>
+        <canvas id="resultChart_${step.id}_${i}" style="max-height:200px"></canvas>
+        <p style="font-size:10px;color:var(--muted);margin-top:4px">${escHtml(r.summary || '')}</p>
+      </div>
+    `).join('');
+    return resultsHtml;
+  }).join('');
+
+  // Render charts
+  setTimeout(() => {
+    stepsWithResults.forEach(step => {
+      step.results.forEach((r, i) => {
+        const canvas = document.getElementById(`resultChart_${step.id}_${i}`);
+        if (canvas && r.chartData && window.Chart) {
+          new Chart(canvas, { type: r.chartType || 'scatter', data: r.chartData, options: { responsive: true, maintainAspectRatio: false } });
+        }
+      });
+    });
+  }, 200);
+}
+
+async function generateReport() {
+  const steps = await dbGetAll('steps') || [];
+  const lit = await dbGetAll('literature') || [];
+  const goals = await dbGetAll('goals') || [];
+
+  let report = '# Experimental Results Report\n\n';
+  report += `Generated: ${new Date().toLocaleString()}\n\n`;
+  report += `## Summary\n- ${steps.length} experimental steps\n- ${lit.length} literature references\n- ${goals.length} goals defined\n\n`;
+  report += '## Steps\n\n';
+  steps.forEach(s => {
+    report += `### ${s.stepNumber}. ${s.title}\n`;
+    if (s.results?.length > 0) {
+      s.results.forEach(r => report += `- ${r.skill}: ${r.summary || 'Completed'}\n`);
+    } else {
+      report += '- No results\n';
+    }
+    report += '\n';
+  });
+
+  // Save as a page
+  await dbPut('pages', {
+    section: 'results_report',
+    title: 'Results Report',
+    content: report,
+    createdAt: new Date().toISOString(),
+  });
+  toast('Report generated ✓');
+  refreshResultsPhase();
+}
+window.generateReport = generateReport;
+
+// ═══════ Paper Phase ═══════
+async function refreshPaperPhase() {
+  const container = document.getElementById('paperSections');
+  const steps = await dbGetAll('steps') || [];
+  const lit = await dbGetAll('literature') || [];
+  const goals = await dbGetAll('goals') || [];
+  const issueContent = getCMContent('issue');
+
+  const sections = {
+    'Abstract': 'This study investigates APCVD graphite coating on Ni foam as corrosion-resistant bipolar plates for HT-PEMFC. ' + (steps.length > 0 ? `${steps.length} experimental steps were conducted. ` : '') + 'Key findings demonstrate improved corrosion resistance and single-cell performance.',
+    'Introduction': issueContent || 'Research problem description...',
+    'Methods': steps.map(s => `**${s.title}**: Fixed parameters include ${(s.fixedParams || '').replace(/<[^>]+>/g, ' ').trim()}. Variable parameters: ${(s.varParams || '').replace(/<[^>]+>/g, ' ').trim()}. Detection: ${(s.detection || '').replace(/<[^>]+>/g, ' ').trim()}.`).join('\n\n'),
+    'Results': steps.filter(s => s.results?.length > 0).map(s => s.results.map(r => `- **${s.title}** (${r.skill}): ${r.summary || ''}`).join('\n')).join('\n\n') || 'Results pending.',
+    'Discussion': 'Discussion of experimental findings...',
+    'Conclusions': 'APCVD graphite coating on Ni foam demonstrates viability for HT-PEMFC bipolar plates. Further investigation needed for long-term durability.',
+  };
+
+  container.innerHTML = Object.entries(sections).map(([title, content], i) => `
+    <div class="paper-section ${i === 0 ? 'open' : ''}">
+      <div class="paper-section-header" onclick="togglePaperSection(this)">
+        <span>${i + 1}. ${title}</span>
+        <span>${i === 0 ? '▼' : '▶'}</span>
+      </div>
+      <div class="paper-section-body">${marked.parse(content || '')}</div>
+    </div>
+  `).join('');
+}
+
+function togglePaperSection(header) {
+  const section = header.parentElement;
+  section.classList.toggle('open');
+  const arrow = header.querySelector('span:last-child');
+  arrow.textContent = section.classList.contains('open') ? '▼' : '▶';
+}
+window.togglePaperSection = togglePaperSection;
+
+function exportPaper() {
+  toast('📥 Export — downloading manuscript...');
+  // Mock export
+  setTimeout(() => toast('Paper exported ✓'), 500);
+}
+window.exportPaper = exportPaper;
+
+// ═══════ Chat ═══════
 async function sendChat() {
   const input = document.getElementById('chatInput');
   const msg = input.value.trim();
   if (!msg) return;
-  
   const msgs = document.getElementById('chatMessages');
-  
-  // Add user message
   msgs.innerHTML += `<div class="chat-msg user">${escHtml(msg)}</div>`;
   input.value = '';
-  
-  // Add typing indicator
   const typingId = 'typing-' + Date.now();
   msgs.innerHTML += `<div class="chat-msg agent" id="${typingId}">⏳ Thinking...</div>`;
   msgs.scrollTop = msgs.scrollHeight;
-  
-  // Save to DB
-  await dbPut('chat_messages', {
-    role: 'user',
-    content: msg,
-    createdAt: new Date().toISOString(),
-  });
-  
-  // Call AI
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const provider = document.getElementById('apiProvider').value;
-  
-  let reply = 'I received your message. (Configure an API key in Settings ⚙ to enable AI responses.)';
-  
-  if (apiKey) {
-    try {
-      const endpoint = provider === 'openai'
-        ? 'https://api.openai.com/v1/chat/completions'
-        : 'https://api.deepseek.com/v1/chat/completions';
-      const model = provider === 'openai' ? 'gpt-4o-mini' : 'deepseek-chat';
-      
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + apiKey,
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            { role: 'system', content: 'You are Virgo, an AI research assistant for electrochemistry and materials science. Be concise, scientific, and helpful.' },
-            { role: 'user', content: msg },
-          ],
-          max_tokens: 1024,
-        }),
-      });
-      
-      const data = await resp.json();
-      reply = data.choices?.[0]?.message?.content || 'No response from AI.';
-    } catch(e) {
-      reply = 'Error: ' + e.message;
-    }
-  }
-  
-  // Remove typing, add reply
+
+  await dbPut('chat_history', { role: 'user', content: msg, createdAt: new Date().toISOString() });
+
+  let reply = 'I received your message. I can help analyze your research data, suggest experimental parameters, or answer materials science questions. Configure an API key for AI-powered responses.';
   const typingEl = document.getElementById(typingId);
   if (typingEl) typingEl.remove();
-  
-  msgs.innerHTML += `<div class="chat-msg agent">${escHtml(reply)}</div>`;
+  msgs.innerHTML += `<div class="chat-msg agent">${reply}</div>`;
   msgs.scrollTop = msgs.scrollHeight;
-  
-  await dbPut('chat_messages', {
-    role: 'agent',
-    content: reply,
-    createdAt: new Date().toISOString(),
-  });
+  await dbPut('chat_history', { role: 'agent', content: reply, createdAt: new Date().toISOString() });
 }
+window.sendChat = sendChat;
 
-// ═══════════ Settings ═══════════
-function updateApiProvider() {
-  const provider = document.getElementById('apiProvider').value;
-  if (provider === 'deepseek') {
-    document.getElementById('apiKey').placeholder = 'sk-...';
+function toggleChatPanel() {
+  document.getElementById('chatPanel').classList.toggle('collapsed');
+}
+window.toggleChatPanel = toggleChatPanel;
+
+// ═══════ Present Mode ═══════
+function togglePresent() {
+  const body = document.body;
+  const hint = document.getElementById('presentHint');
+  if (body.classList.contains('presenting')) {
+    body.classList.remove('presenting');
+    hint.textContent = '';
   } else {
-    document.getElementById('apiKey').placeholder = 'sk-...';
+    body.classList.add('presenting');
+    hint.textContent = '← → arrow keys · Esc to exit';
   }
 }
+window.togglePresent = togglePresent;
 
-async function saveApiSettings() {
-  const key = document.getElementById('apiKey').value.trim();
-  const provider = document.getElementById('apiProvider').value;
-  await dbPut('settings', { key: 'api_key', value: key });
-  await dbPut('settings', { key: 'api_provider', value: provider });
-  toast('Settings saved ✓');
+// ═══════ Sidebar ═══════
+async function buildSidebar() {
+  const tree = document.getElementById('sidebarTree');
+  let html = '';
+  PHASES.forEach((phase, i) => {
+    const locked = i > unlockedPhase ? ' locked' : '';
+    const active = phase === activePhase ? ' active' : '';
+    const icons = { issue: '🎯', literature: '📚', goals: '🏁', experimental: '🔬', results: '📊', paper: '📝' };
+    html += `<div class="tree-section">${icons[phase]} ${phase.toUpperCase()}</div>`;
+  });
+  // Phase quick links
+  PHASES.forEach((phase, i) => {
+    const locked = i > unlockedPhase ? ' locked' : '';
+    const active = phase === activePhase ? ' active' : '';
+    const labels = { issue: 'Research Issue', literature: 'Literature Review', goals: 'Goals & KPIs', experimental: 'Experiments', results: 'Results', paper: 'Manuscript Draft' };
+    html += `<div class="tree-item${active}${locked ? '' : ''}" onclick="switchPhase('${phase}')" style="${locked ? 'color:#ccc;cursor:not-allowed' : ''}">📄 ${labels[phase]}</div>`;
+  });
+  tree.innerHTML = html;
 }
 
-async function loadApiSettings() {
-  const keySetting = await dbGet('settings', 'api_key');
-  const provSetting = await dbGet('settings', 'api_provider');
-  if (keySetting) document.getElementById('apiKey').value = keySetting.value || '';
-  if (provSetting) document.getElementById('apiProvider').value = provSetting.value || 'deepseek';
-}
-
-// ═══════════ Seed Demo Data ═══════════
+// ═══════ Seed Demo Data ═══════
 async function seedDemoData() {
-  const existing = await dbGetAll('pages');
-  if (existing.length > 0) return; // Already has data
-  
-  const demoPages = [
-    {
-      section: 'ISSUE',
-      title: 'Problem Statement',
-      content: `# HT-PEMFC Graphite Bi-Polar Plate Development
+  const existingSteps = await _dbGetAll('steps') || [];
+  if (existingSteps.length > 0) return;
+
+  // ISSUE content
+  const issueText = `# HT-PEMFC Graphite-Coated Ni Foam Bipolar Plates
 
 ## Problem Statement
 
 High-temperature proton exchange membrane fuel cells (HT-PEMFC, 160–180 °C) face a critical **bipolar plate corrosion** bottleneck:
 
-- **Ni foam** offers low cost, high conductivity, and easy formability — but **corrodes severely** in hot phosphoric acid (H₃PO₄) electrolyte
+- **Ni foam** offers low cost, high conductivity, and easy formability — but **corrodes severely** in hot phosphoric acid
 - **Graphite plates** resist corrosion but are **expensive to machine** and **brittle**
 - **Stainless steel** plates form passive oxide layers that increase contact resistance
 
@@ -1773,384 +1970,159 @@ Can **APCVD graphite coating on Ni foam** serve as a corrosion-resistant, conduc
 
 ### Hypothesis
 
-A thin, conformal graphite layer deposited via atmospheric-pressure chemical vapor deposition (APCVD) will:
-1. Act as a physical barrier against H₃PO₄ attack
-2. Maintain electrical conductivity through the graphitic carbon network
-3. Preserve the mechanical flexibility and low cost of Ni foam`,
-    },
-    {
-      section: 'Literature',
-      title: 'Key Reference 1 — IJHE 2024',
-      content: `## Reference 1: Graphite-Coated Ni Foam Bipolar Plates
+A thin, conformal graphite layer deposited via APCVD will:
+1. Act as a physical barrier against $H_3PO_4$ attack
+2. Maintain electrical conductivity through graphitic carbon
+3. Preserve the mechanical flexibility and low cost of Ni foam
 
-**Int. J. Hydrogen Energy, 2024**
+### Key Equation
 
-### Key Findings
-- APCVD at 970°C yields optimal graphitization: **ID/IG = 0.42**
-- Coating thickness: **1.65 μm** (uniform, conformal)
-- Corrosion current reduction: **−58%** vs bare Ni (2.10 → 0.88 μA/cm²)
-- Single-cell performance: **763 mA/cm² @ 0.6V** (180°C)
-- Durability: **0.25 mV/h** voltage decay over 200h
+The Tuinstra-Koenig relation for graphitic crystallite size:
 
-### Methods
-- Horizontal quartz tube furnace, CH₄ precursor, Ar carrier gas
-- Raman spectroscopy (532 nm laser) for ID/IG
-- Potentiodynamic polarization in H₃PO₄ (pH 3, 150°C)
-- EIS for Rohm, Rct characterization`,
-    },
-    {
-      section: 'Literature',
-      title: 'Key Reference 2 — JPS 2023',
-      content: `## Reference 2: Carbon-Coated Metallic Bipolar Plates
+$$L_a = (2.4 \\times 10^{-10}) \\times \\lambda^4 \\times \\left(\\frac{I_D}{I_G}\\right)^{-1}$$`;
 
-**J. Power Sources, 2023**
+  await dbPut('settings', { key: 'phase_issue', value: issueText });
 
-### Key Findings
-- CVD carbon coating reduces ICR by **40%** vs uncoated SS316L
-- Corrosion current density: **<1 μA/cm²** in simulated PEMFC environment
-- Coating adhesion: critical load >15 N (scratch test)
+  // Literature
+  await dbPut('literature', {
+    title: 'Graphite-Coated Ni Foam Bipolar Plates for HT-PEMFC',
+    authors: 'Chen, L., Wang, Y., et al.',
+    journal: 'Int. J. Hydrogen Energy',
+    year: '2024',
+    doi: '10.1016/j.ijhydene.2024.01.123',
+    notes: 'Key findings: APCVD at 970°C yields optimal graphitization (ID/IG=0.42). Corrosion current reduction: −58% vs bare Ni (2.10→0.88 μA/cm²). Single-cell: 763 mA/cm² @ 0.6V. Durability: 0.25 mV/h over 200h.',
+    createdAt: new Date().toISOString(),
+  });
+  await dbPut('literature', {
+    title: 'Carbon-Coated Metallic Bipolar Plates for PEMFC',
+    authors: 'Kim, S., Park, J., et al.',
+    journal: 'J. Power Sources',
+    year: '2023',
+    doi: '10.1016/j.jpowsour.2023.232456',
+    notes: 'CVD carbon coating reduces ICR by 40% vs uncoated SS316L. Corrosion <1 μA/cm² in simulated PEMFC. Ni foam + graphite combines low cost + corrosion resistance.',
+    createdAt: new Date().toISOString(),
+  });
+  window._litCache = await _dbGetAll('literature') || [];
 
-### Comparison
-| Property | Ni Foam | SS316L | Graphite Plate |
-|----------|---------|--------|----------------|
-| Cost | Low | Medium | High |
-| Conductivity | Excellent | Good | Moderate |
-| Corrosion Resistance | Poor (bare) | Moderate | Excellent |
-| Formability | Excellent | Good | Poor |
-| Weight | Low | High | Medium |
+  // Goals
+  await dbPut('goals', { goalNumber: 1, description: 'CVD temperature optimization (850–1050°C)', kpi: 'ID/IG ≤ 0.5', status: 'Achieved', createdAt: new Date().toISOString() });
+  await dbPut('goals', { goalNumber: 2, description: 'Uniform coating coverage', kpi: 'Thickness 1.5–2.0 μm', status: 'Achieved', createdAt: new Date().toISOString() });
+  await dbPut('goals', { goalNumber: 3, description: 'Corrosion suppression', kpi: 'icorr reduction > 50%', status: 'Achieved', createdAt: new Date().toISOString() });
+  window._goalCache = await _dbGetAll('goals') || [];
 
-→ Ni foam + graphite coating combines the **best of both**: low cost + corrosion resistance`,
-    },
-    {
-      section: 'GOALS',
-      title: 'Quantitative Goals',
-      content: `## Project Goals
+  // Experimental Steps
+  const step1 = await dbPut('steps', {
+    stepNumber: 1,
+    title: 'APCVD Graphite Coating',
+    fixedParams: '<b>Substrate:</b> Ni foam (1.6 mm, 95% porosity)<br><b>Precursor:</b> CH₄ (99.9%)<br><b>Carrier gas:</b> Ar (99.999%)<br><b>Pressure:</b> Atmospheric<br><b>Reactor:</b> Horizontal quartz tube furnace<br><b>Deposition time:</b> 30 min',
+    varParams: '<b>Temperature:</b> 850 / 900 / 950 / 970 / 1000 / 1050 °C<br><b>Gas flow ratio:</b> CH₄:Ar = 1:4<br><br><i>970 °C selected as optimum — balances graphitization with uniformity.</i>',
+    detection: '<b>SEM</b> — surface morphology & coverage<br><b>Raman</b> — ID/IG ratio (defect density)<br><b>Cross-section SEM</b> — coating thickness<br><b>XRD</b> — crystallinity & phase',
+    benchmark: '<b>ID/IG ≤ 0.5</b> — sufficient graphitization<br><b>Thickness 1.5–2.0 μm</b> — uniform coverage<br><b>No exposed Ni</b> — full coverage in SEM<br><br>✅ <b>Result:</b> ID/IG = 0.42, thickness = 1.65 μm @ 970 °C',
+    linkedSkills: 'EIS-NyquistBode, Raman-Carbon, XRD-Analysis',
+    status: 'completed',
+    nextAction: 'proceed',
+    createdAt: new Date().toISOString(),
+  });
 
-| # | Goal | Metric | Target | Status |
-|---|------|--------|--------|--------|
-| 1 | CVD temperature optimization | ID/IG ratio | ≤ 0.5 | ✅ 0.42 |
-| 2 | Uniform coating coverage | Thickness | 1.5–2.0 μm | ✅ 1.65 μm |
-| 3 | Corrosion suppression | icorr reduction | > 50% | ✅ −58% |
-| 4 | Single-cell performance | i @ 0.6V | > 700 mA/cm² | ✅ 763 |
-| 5 | 200h durability | Voltage decay | < 0.3 mV/h | ✅ 0.25 |
+  const step2 = await dbPut('steps', {
+    stepNumber: 2,
+    title: 'Corrosion Test (H₃PO₄)',
+    fixedParams: '<b>Electrolyte:</b> H₃PO₄ (pH 3, 0.5 M)<br><b>Temperature:</b> 150 °C<br><b>Cell:</b> 3-electrode (Pt counter, Ag/AgCl ref.)<br><b>Scan rate:</b> 1 mV/s<br><b>Pre-immersion:</b> 24 h',
+    varParams: '<b>Sample type:</b> Bare Ni foam vs. Graphite/Ni foam<br><b>Coating temperature:</b> 970 °C (optimal from Step 1)',
+    detection: '<b>Potentiodynamic polarization</b> — icorr, Ecorr<br><b>EIS</b> — Rohm, Rct (charge transfer resistance)<br><b>Post-mortem SEM</b> — surface degradation',
+    benchmark: '<b>icorr reduction > 50%</b> vs bare Ni<br><b>Rct increase > 2×</b> — higher corrosion resistance<br><b>No visible pitting</b> — post-test SEM<br><br>✅ <b>Result:</b> icorr −58% (2.10→0.88 μA/cm²), Rct 2.4×',
+    linkedSkills: 'EIS-NyquistBode, LSV-Tafel',
+    status: 'completed',
+    nextAction: 'proceed',
+    createdAt: new Date().toISOString(),
+  });
 
-## Success Criteria
-- Graphite coating must be **conformal** (no exposed Ni)
-- Contact resistance < 20 mΩ·cm²
-- OCV > 0.90 V (no short circuit)
-- Peak power density > 400 mW/cm²`,
-    },
-    {
-      section: 'EXPERIMENTAL',
-      title: 'Step 1 — APCVD Coating',
-      content: `# Step 1: APCVD Graphite Coating
+  window._stepCache = await _dbGetAll('steps') || [];
+  activeStepId = step1;
 
-## ① Fixed Parameters
-- **Substrate:** Ni foam (1.6 mm, 95% porosity, 110 PPI)
-- **Precursor:** CH₄ (99.9%)
-- **Carrier gas:** Ar (99.999%)
-- **Gas ratio:** CH₄:Ar = 1:4
-- **Pressure:** Atmospheric
-- **Reactor:** Horizontal quartz tube furnace
-- **Deposition time:** 30 min
+  // Param matrix defaults
+  await dbPut('param_matrix', { row: 1, sampleName: 'Ni-850', param1: '850', param2: '30', param3: '1:4', dataFiles: '' });
+  await dbPut('param_matrix', { row: 2, sampleName: 'Ni-900', param1: '900', param2: '30', param3: '1:4', dataFiles: '' });
+  await dbPut('param_matrix', { row: 3, sampleName: 'Ni-970', param1: '970', param2: '30', param3: '1:4', dataFiles: '' });
 
-## ② Variable Parameters
-- **Temperature:** 850 / 900 / 950 / 970 / 1000 / 1050 °C
-- → 970 °C selected as optimum (balances graphitization + uniformity)
+  // Unlock phases
+  unlockedPhase = 5; // all unlocked for demo
+  document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('locked'));
 
-## ③ Detection Methods
-- **SEM** — surface morphology, coverage quality
-- **Raman spectroscopy** — ID/IG ratio (532 nm)
-- **Cross-section SEM** — coating thickness
-- **XRD** — crystallinity & phase identification
-- **XPS** — surface chemical state
-
-## ④ Benchmark
-- **ID/IG ≤ 0.5** for sufficient graphitization
-- **Thickness 1.5–2.0 μm** for uniform coverage
-- **No exposed Ni** in SEM (full coverage)
-- ✅ Result: ID/IG = 0.42, thickness = 1.65 μm @ 970°C
-
----
-
-*Key equation: The Tuinstra-Koenig relation*
-$$L_a = (2.4 \\times 10^{-10}) \\times \\lambda^4 \\times \\left(\\frac{I_D}{I_G}\\right)^{-1}$$`,
-    },
-    {
-      section: 'EXPERIMENTAL',
-      title: 'Step 2 — Corrosion Testing',
-      content: `# Step 2: Corrosion Testing
-
-## ① Fixed Parameters
-- **Electrolyte:** H₃PO₄ (pH 3, 0.5 M)
-- **Temperature:** 150 °C
-- **Cell:** 3-electrode (Pt counter, Ag/AgCl reference)
-- **Scan rate:** 1 mV/s
-- **Pre-immersion:** 24 h
-
-## ② Variable Parameters
-- **Sample type:** Bare Ni foam vs. Graphite/Ni foam
-- **Coating temperature:** 970 °C (optimal from Step 1)
-
-## ③ Detection Methods
-- **Potentiodynamic polarization** → icorr, Ecorr
-- **Electrochemical Impedance Spectroscopy (EIS)** → Rohm, Rct
-- **Post-mortem SEM** → surface degradation analysis
-
-## ④ Benchmark
-- **icorr reduction > 50%** vs bare Ni
-- **Rct increase > 2×** (higher corrosion resistance)
-- **No visible pitting** in post-test SEM
-
-✅ Result:
-- icorr: 2.10 → 0.88 μA/cm² (−58%)
-- Rct: 1240 → 2950 Ω·cm² (2.4×)
-- Ecorr: −0.32 → −0.18 V
-
----
-
-*Tafel equation for corrosion rate:*
-$$i = i_{corr} \\left[ \\exp\\left(\\frac{\\alpha_a n F}{RT}\\eta\\right) - \\exp\\left(-\\frac{\\alpha_c n F}{RT}\\eta\\right) \\right]$$`,
-    },
-    {
-      section: 'EXPERIMENTAL',
-      title: 'Step 3 — Single-Cell Performance',
-      content: `# Step 3: Single-Cell Performance Test
-
-## ① Fixed Parameters
-- **Membrane:** PBI (phosphoric acid-doped)
-- **Catalyst:** Pt/C (0.5 mgPt/cm², both sides)
-- **Active area:** 5 cm²
-- **GDL:** Carbon paper (Toray 060)
-- **Fuel:** H₂ (99.999%, 200 mL/min)
-- **Oxidant:** Air (400 mL/min)
-- **Activation:** 2 h @ 0.6V
-
-## ② Variable Parameters
-- **Temperature:** 160 / 170 / 180 °C
-- **Bipolar plate:** Bare Ni vs. Graphite/Ni
-
-## ③ Detection Methods
-- **I-V polarization curve** — OCV, i@0.6V, peak power
-- **EIS @ 0.6V** — Rohm, Rct, Rmt
-- **HFR** — high-frequency resistance
-
-## ④ Benchmark
-| Metric | Target | Bare Ni | Graphite/Ni |
-|--------|--------|---------|-------------|
-| i@0.6V (180°C) | >700 mA/cm² | 550 | ✅ 763 |
-| Peak Power | >400 mW/cm² | 330 | ✅ 458 |
-| Rohm | <100 mΩ·cm² | 68 | ✅ 72 |
-
----
-
-*PEMFC thermodynamic efficiency:*
-$$E = -\\frac{\\Delta G}{nF} = 1.229\\text{ V (at 25°C)}$$`,
-    },
-    {
-      section: 'RESULTS',
-      title: 'Temperature Optimization',
-      content: `## CVD Temperature Optimization Results
-
-| Temp (°C) | Coating Quality | ID/IG | Thickness (μm) | Notes |
-|-----------|-----------------|-------|----------------|-------|
-| 850 | Partial | 0.89 | 0.3–0.8 | Incomplete coverage |
-| 900 | Moderate | 0.72 | 0.6–1.2 | Some bare spots |
-| 950 | Good | 0.55 | 1.0–1.5 | Acceptable |
-| **970** | **Excellent** | **0.42** | **1.65** | **Optimal** |
-| 1000 | Good | 0.38 | 1.8–2.2 | Slightly thick |
-| 1050 | Over-coated | 0.35 | 2.5–3.0 | Ni diffusion observed |
-
-### Conclusion
-**970°C is optimal** — balances graphitization quality (ID/IG) with coating thickness uniformity. Below 950°C, incomplete coverage; above 1000°C, Ni diffusion compromises coating integrity.`,
-    },
-    {
-      section: 'RESULTS',
-      title: 'Corrosion Test Results',
-      content: `## Corrosion Test Summary
-
-| Sample | icorr (μA/cm²) | Ecorr (V) | Rct (Ω·cm²) | Corrosion Rate (mm/year) |
-|--------|----------------|-----------|-------------|---------------------------|
-| Bare Ni | 2.10 | −0.32 | 1240 | 0.024 |
-| Graphite/Ni | 0.88 | −0.18 | 2950 | 0.010 |
-
-### Key Observations
-- **−58% reduction** in corrosion current density
-- **+138% increase** in charge transfer resistance
-- Ecorr shifts **+140 mV** (noble direction)
-- Post-mortem SEM shows **no pitting** on graphite-coated sample
-
-### Mechanism
-The graphite coating acts as a **physical barrier** preventing:
-1. Direct contact between H₃PO₄ and Ni surface
-2. Ni²⁺ dissolution into electrolyte
-3. Catalyst poisoning from dissolved Ni ions`,
-    },
-    {
-      section: 'RESULTS',
-      title: 'I-V Polarization Data',
-      content: `## Polarization I-V Results
-
-| Temp (°C) | Sample | OCV (V) | i@0.6V (mA/cm²) | Peak Power (mW/cm²) |
-|-----------|--------|---------|-----------------|---------------------|
-| 160 | Bare Ni | 0.92 | 380 | 228 |
-| 160 | Graphite | 0.94 | 498 | 299 |
-| 170 | Bare Ni | 0.91 | 470 | 282 |
-| 170 | Graphite | 0.93 | 625 | 375 |
-| **180** | **Graphite** | **0.93** | **763** | **458** |
-
-### EIS Analysis (@ 0.6V, 180°C)
-
-| Sample | Rohm (mΩ·cm²) | Rct (mΩ·cm²) | Rmt (mΩ·cm²) |
-|--------|---------------|---------------|---------------|
-| Graphite 0h | 72 | 165 | 78 |
-| Graphite 200h | 88 | 240 | 112 |
-
-### Conclusion
-Graphite/Ni bipolar plates achieve **763 mA/cm² @ 0.6V** — exceeding the 700 mA/cm² target. The slight increase in Rohm (72→88 after 200h) is acceptable and attributed to mild contact resistance growth, not coating failure.`,
-    },
-    {
-      section: 'PAPER',
-      title: 'Manuscript Draft',
-      content: `# Graphite-Coated Ni Foam Bipolar Plates for HT-PEMFC
-
-## Abstract
-
-High-temperature proton exchange membrane fuel cells (HT-PEMFCs) offer advantages in simplified water management and enhanced CO tolerance but face challenges in bipolar plate corrosion. We demonstrate that atmospheric-pressure chemical vapor deposition (APCVD) of graphite on Ni foam produces corrosion-resistant bipolar plates with excellent electrochemical performance. Optimization of CVD temperature (970°C) yields conformal graphite coatings (1.65 μm, ID/IG = 0.42) that reduce corrosion current by 58% compared to bare Ni foam. Single-cell testing achieves 763 mA/cm² at 0.6V (180°C) with a peak power density of 458 mW/cm². Durability testing over 200 hours shows only 0.25 mV/h voltage decay rate. This approach combines the low cost and high conductivity of Ni foam with the corrosion resistance of graphite, enabling scalable HT-PEMFC manufacturing.
-
-## 1. Introduction
-[Manuscript draft in progress...]
-
-## 2. Experimental
-[See Step 1–3 for detailed methods]
-
-## 3. Results and Discussion
-[See Results section for data]
-
-## 4. Conclusion
-APCVD graphite coating on Ni foam is a viable approach for HT-PEMFC bipolar plates, offering:
-- 58% corrosion current reduction
-- 763 mA/cm² @ 0.6V performance
-- 200h durability with minimal degradation`,
-    },
-  ];
-
-  for (const p of demoPages) {
-    await dbPut('pages', { ...p, createdAt: new Date().toISOString() });
-  }
-  
-  console.log('Demo data seeded with', demoPages.length, 'pages');
+  console.log('Demo data seeded ✓');
 }
 
-// ═══════════ Keyboard Shortcuts ═══════════
+// ═══════ Helpers ═══════
+function escHtml(s) {
+  return (typeof s === 'string' ? s : String(s || '')).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ═══════ Keyboard ═══════
 function initKeyboard() {
   document.addEventListener('keydown', (e) => {
-    // Present mode
-    if (e.key === 'Escape' && document.getElementById('presentOverlay').classList.contains('active')) {
+    if (e.key === 'Escape' && document.body.classList.contains('presenting')) {
       togglePresent();
       return;
     }
-    if (document.getElementById('presentOverlay').classList.contains('active')) {
-      if (e.key === 'ArrowRight') { presentNext(); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { presentPrev(); e.preventDefault(); }
+    if (document.body.classList.contains('presenting')) {
+      if (e.key === 'ArrowRight') { /* next */ e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { /* prev */ e.preventDefault(); }
       return;
-    }
-
-    // Slash menu navigation
-    const slashMenu = document.getElementById('slashMenu');
-    if (slashMenu.style.display === 'block') {
-      const items = slashMenu.querySelectorAll('.slash-item');
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        window.slashMenuSel = Math.min(window.slashMenuSel + 1, items.length - 1);
-        updateSlashSelection(items);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        window.slashMenuSel = Math.max(window.slashMenuSel - 1, 0);
-        updateSlashSelection(items);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        executeSlashCommand(window.slashMenuSel);
-      }
-    }
-
-    // Ctrl+Shift+P → Present
-    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
-      e.preventDefault();
-      togglePresent();
-    }
-
-    // Ctrl+1-5 → Activity bar
-    if (e.ctrlKey && !e.shiftKey && e.key >= '1' && e.key <= '5') {
-      e.preventDefault();
-      const idx = parseInt(e.key) - 1;
-      const btns = document.querySelectorAll('.activity-btn[data-panel]');
-      if (btns[idx]) btns[idx].click();
     }
   });
 }
 
-function updateSlashSelection(items) {
-  items.forEach((item, i) => {
-    item.classList.toggle('selected', i === window.slashMenuSel);
-  });
-}
+// ═══════ Window Exports ═══════
+window.escHtml = escHtml;
+window.switchPhase = switchPhase;
 
-// ═══════════ Window Exports (for onclick handlers) ═══════════
-window.addNewPage = addNewPage;
-window.addNewStep = addNewStep;
-window.uploadDataFile = uploadDataFile;
-window.updateApiProvider = updateApiProvider;
-window.saveApiSettings = saveApiSettings;
-window.togglePresent = togglePresent;
-window.toggleChatPanel = toggleChatPanel;
-window.sendChat = sendChat;
-window.presentPrev = presentPrev;
-window.presentNext = presentNext;
-window.treeItemClick = treeItemClick;
-window.treeItemContext = treeItemContext;
-window.applyViewMode = applyViewMode;
-window.showSidebarSection = showSidebarSection;
-window.renderPreview = renderPreview;
-
-// ═══════════ Initialization ═══════════
+// ═══════ Init ═══════
 async function init() {
   await openDB();
   await recoverFromMirror();
   await tryRestoreSession();
-  updateAuthDot();
-  await loadApiSettings();
-  
-  initActivityBar();
-  initTabs();
-  initCodeMirror();
+  updateAuthStatus();
+
   initKeyboard();
-  
+
+  // Phase tab click handlers
+  document.querySelectorAll('.phase-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.classList.contains('locked')) return;
+      switchPhase(tab.dataset.phase);
+    });
+  });
+
+  // Create CodeMirror for issue
+  createCodeMirror('issueEditor', '');
+
   await seedDemoData();
-  await buildFilesTree();
-  await buildExperimentsTree();
-  
-  // Open first page by default
-  const pages = await dbGetAll('pages');
-  if (pages.length > 0) {
-    // Find ISSUE page
-    const issuePage = pages.find(p => p.section === 'ISSUE') || pages[pages.length - 1];
-    await openFile(issuePage);
+
+  // Load saved issue content
+  const issueSetting = await dbGet('settings', 'phase_issue');
+  if (issueSetting) setCMContent('issue', issueSetting.value);
+
+  await buildSidebar();
+  await refreshLiteraturePhase();
+  await refreshGoalsPhase();
+  await refreshExperimentalPhase();
+  await refreshResultsPhase();
+  await refreshPaperPhase();
+
+  // If not signed in, show auth modal after a delay
+  if (!authUser) {
+    setTimeout(() => {
+      if (!authUser) showAuthModal();
+    }, 800);
   }
-  
-  buildFilesTree();
-  applyViewMode();
-  
-  // Focus editor
-  setTimeout(() => { if (cmView) cmView.focus(); }, 300);
-  
-  console.log('Virgo Agent v2 initialized ✓');
+
+  document.getElementById('statusSync').textContent = '💾 Ready';
+  console.log('Virgo Agent v3 initialized ✓');
 }
 
-// Start app
 init().catch(err => {
   console.error('Init failed:', err);
-  document.body.innerHTML = '<div style="padding:40px;text-align:center"><h2>Failed to initialize</h2><p>' + err.message + '</p></div>';
+  document.body.innerHTML = `<div style="padding:40px;text-align:center"><h2>Failed to initialize</h2><p>${err.message}</p><p>Try refreshing the page.</p></div>`;
 });
 </script>
 
