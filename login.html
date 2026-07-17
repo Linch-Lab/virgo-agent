@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Sign In — Virgo Agent</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0b;--bg2:#111114;--bdr:#2a2a30;--txt:#e8e8ec;--txt2:#9898a4;--acc:#6c5ce7;--acc2:#a78bfa;--red:#ef4444}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.box{width:100%;max-width:400px;padding:48px 40px}
+.logo{font-size:18px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;margin-bottom:40px;justify-content:center}
+.logo .icon{width:32px;height:32px;background:linear-gradient(135deg,var(--acc),var(--acc2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+h1{font-size:26px;font-weight:700;text-align:center;margin-bottom:8px}
+.sub{font-size:14px;color:var(--txt2);text-align:center;margin-bottom:32px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:12px;color:var(--txt2);margin-bottom:6px;font-weight:500}
+.field input{width:100%;padding:12px 14px;background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;color:var(--txt);font-size:14px;font-family:inherit;outline:none}
+.field input:focus{border-color:var(--acc)}
+.err{font-size:12px;color:var(--red);margin-bottom:12px;display:none;text-align:center}
+.err.show{display:block}
+.btn{width:100%;padding:12px;background:var(--acc);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--acc2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.back{text-align:center;margin-top:24px}
+.back a{color:var(--txt2);font-size:13px;text-decoration:none}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+<div class="box">
+<div class="logo"><div class="icon">V</div>Virgo Agent</div>
+<h1>Welcome back</h1>
+<p class="sub">Sign in to your research workspace</p>
+<div class="field"><label>Email</label><input type="email" id="email" placeholder="satb03@gmail.com" autocomplete="email"></div>
+<div class="field"><label>Password</label><input type="password" id="password" placeholder="••••••" autocomplete="current-password"></div>
+<div class="err" id="err"></div>
+<button class="btn" id="submitBtn" onclick="doLogin()">Sign In</button>
+<div class="back"><a href="/">← Back to home</a></div>
+</div>
+<script>
+var SUPABASE_URL='https://mtshudmynuedafqixbvj.supabase.co';
+var SUPABASE_ANON_KEY='sb_publishable_97FLsYeAC_P5WWWeSkfvgQ_H99sN3VU';
+var ALLOWED=['satb03@gmail.com'];
+var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Auto-redirect if logged in
+(async function(){
+  try{var s=await supabase.auth.getSession();if(s.data?.session)location.href='/app'}catch(e){}
+})();
+
+async function doLogin(){
+  var e=document.getElementById('email').value.trim();
+  var p=document.getElementById('password').value;
+  var err=document.getElementById('err');
+  var btn=document.getElementById('submitBtn');
+  err.classList.remove('show');
+  if(!e||!p){err.textContent='Email and password required';err.classList.add('show');return}
+  if(ALLOWED.indexOf(e)===-1){err.textContent='Private beta. Access by invitation only.';err.classList.add('show');return}
+  btn.disabled=true;btn.textContent='Signing in...';
+  try{
+    var r=await supabase.auth.signInWithPassword({email:e,password:p});
+    if(r.error){err.textContent=r.error.message;err.classList.add('show');btn.disabled=false;btn.textContent='Sign In';return}
+    location.href='/app';
+  }catch(ex){err.textContent='Network error. Try again.';err.classList.add('show');btn.disabled=false;btn.textContent='Sign In'}
+}
+document.getElementById('password').addEventListener('keydown',function(ev){if(ev.key=='Enter')doLogin()});
+</script>
+</body>
+</html>
