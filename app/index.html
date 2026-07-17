@@ -836,9 +836,6 @@ body.presenting .present-hint { display: block; }
       <div class="form-group"><label>Password</label><input type="password" id="regPassword" placeholder="At least 6 characters"></div>
       <button class="btn prim" onclick="doRegister()" style="width:100%">Create Account</button>
     </div>
-    <div style="margin-top:10px;text-align:center">
-      <button class="btn sm" onclick="closeAuthModal()">Skip for now (offline)</button>
-    </div>
   </div>
 </div>
 
@@ -1030,11 +1027,10 @@ async function showAuthModal() {
 window.showAuthModal = showAuthModal;
 function handleAuthClick() {
   if (authUser) {
-    // Logout
     if (supabase) supabase.auth.signOut();
     authUser = null;
     updateAuthStatus();
-    toast('Signed out');
+    window.location.href = '/';
   } else {
     showAuthModal();
   }
@@ -1061,6 +1057,7 @@ async function doLogin() {
     authUser = data.user;
     updateAuthStatus();
     closeAuthModal();
+    await loadContent();
     toast('Signed in ✓');
   } catch(e) { toast('Login failed: ' + e.message, 'var(--red)'); }
 }
@@ -2503,37 +2500,18 @@ window.escHtml = escHtml;
 window.switchPhase = switchPhase;
 
 // ═══════ Init ═══════
-async function init() {
-  const d = document.getElementById('diag');
-  if (d) d.textContent = '⏳ JS started, initializing...';
-  const dbg = document.getElementById('debugBanner');
-  try {
-  if (dbg) dbg.remove();
-  await openDB();
-  if (d) d.textContent = '⏳ DB opened, restoring session...';
-  await recoverFromMirror();
-  await tryRestoreSession();
-  updateAuthStatus();
-
+async function loadContent() {
   initKeyboard();
-
-  // Phase tab click handlers
   document.querySelectorAll('.phase-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       if (tab.classList.contains('locked')) return;
       switchPhase(tab.dataset.phase);
     });
   });
-
-  // Create CodeMirror for issue
   createCodeMirror('issueEditor', '');
-
   await seedDemoData();
-
-  // Load saved issue content
   const issueSetting = await dbGet('settings', 'phase_issue');
   if (issueSetting) setCMContent('issue', issueSetting.value);
-
   await buildSidebar();
   await refreshLiteraturePhase();
   await refreshReferencesPhase();
@@ -2541,16 +2519,27 @@ async function init() {
   await refreshExperimentalPhase();
   await refreshResultsPhase();
   await refreshPaperPhase();
+  document.getElementById('statusSync').textContent = '💾 Ready';
+  console.log('Virgo Agent v3 initialized ✓');
+}
 
-  // Show auth modal if not signed in
+async function init() {
+  const d = document.getElementById('diag');
+  if (d) d.textContent = '⏳ JS started, initializing...';
+  const dbg = document.getElementById('debugBanner');
+  try {
+  if (dbg) dbg.remove();
+  await openDB();
+  await tryRestoreSession();
+  updateAuthStatus();
+
   if (!authUser) {
-    setTimeout(() => {
-      if (!authUser) showAuthModal();
-    }, 800);
+    showAuthModal();
+    return; // Don't load content until logged in
   }
 
-  if (d) d.textContent = '✅ Ready — Virgo Agent v3';
-  document.getElementById('statusSync').textContent = '💾 Ready';
+  await loadContent();
+
   console.log('Virgo Agent v3 initialized ✓');
   } catch(e) {
     console.error('init FAILED:', e.message, e.stack);
