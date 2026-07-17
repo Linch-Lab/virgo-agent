@@ -183,6 +183,20 @@ body {
 }
 .phase-tab.locked { color: #ccc; cursor: not-allowed; }
 .phase-spacer { flex: 1; }
+
+/* References Phase */
+.ref-card { background: var(--card); border: 1px solid var(--bdr); border-radius: 6px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; }
+.ref-card .ref-text { flex: 1; font-size: 12px; line-height: 1.6; }
+.ref-card .ref-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ref-index { color: var(--acc); font-weight: 600; min-width: 24px; font-size: 11px; }
+.ref-toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.ref-toolbar input { flex: 1; min-width: 200px; padding: 6px 10px; border: 1px solid var(--bdr); border-radius: var(--radius); font-family: var(--font); font-size: 12px; }
+.ref-toolbar select { padding: 6px 10px; border: 1px solid var(--bdr); border-radius: var(--radius); font-family: var(--font); font-size: 12px; background: var(--card); }
+.ref-loading { display: none; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; padding: 8px 0; }
+.ref-loading.show { display: flex; }
+.ref-spinner { width: 14px; height: 14px; border: 2px solid var(--bdr); border-top-color: var(--acc); border-radius: 50%; animation: refSpin 0.6s linear infinite; }
+@keyframes refSpin { to { transform: rotate(360deg); } }
+.ref-export-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--bdr); font-size: 11px; color: var(--muted); }
 .phase-actions { display: flex; gap: 6px; padding-right: 10px; }
 .phase-actions button {
   font-size: 10px;
@@ -649,6 +663,7 @@ body.presenting .present-hint { display: block; }
     <div class="phase-tabs" id="phaseTabs">
       <button class="phase-tab active" data-phase="issue">🎯 ISSUE</button>
       <button class="phase-tab locked" data-phase="literature">📚 Literature</button>
+      <button class="phase-tab locked" data-phase="references">📖 References</button>
       <button class="phase-tab locked" data-phase="goals">🏁 GOALS</button>
       <button class="phase-tab locked" data-phase="experimental">🔬 EXPERIMENTAL</button>
       <button class="phase-tab locked" data-phase="results">📊 RESULTS</button>
@@ -685,6 +700,34 @@ body.presenting .present-hint { display: block; }
             <button class="btn prim" onclick="showLitForm()">+ Add Reference</button>
           </div>
           <div id="litCards" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- REFERENCES -->
+      <div class="phase-panel" id="panel-references">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h3 style="margin:0">📖 Bibliography &amp; Citations</h3>
+            <select id="refStyle" onchange="onRefStyleChange()" style="padding:4px 8px;border:1px solid var(--bdr);border-radius:var(--radius);font-size:11px;font-family:var(--font);background:var(--card)">
+              <option value="apa">APA 7th</option>
+              <option value="vancouver">Vancouver</option>
+              <option value="acs">ACS</option>
+              <option value="chicago">Chicago</option>
+              <option value="harvard">Harvard</option>
+            </select>
+          </div>
+          <div class="ref-toolbar" style="margin-top:12px">
+            <input type="text" id="refSearch" placeholder="Paste DOI, ISBN, or paper title..." onkeydown="if(event.key==='Enter')searchReference()">
+            <button class="btn prim" onclick="searchReference()">🔍 Search</button>
+          </div>
+          <div class="ref-loading" id="refLoading">
+            <div class="ref-spinner"></div> Searching Crossref...
+          </div>
+          <div id="refList"></div>
+          <div class="ref-export-bar" id="refExportBar" style="display:none">
+            <span id="refCount"></span>
+            <button class="btn sm" onclick="exportAllRefs()">📋 Export All</button>
+          </div>
         </div>
       </div>
 
@@ -898,6 +941,7 @@ function openDB() {
       if (!d.objectStoreNames.contains('steps')) d.createObjectStore('steps', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('goals')) d.createObjectStore('goals', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('param_matrix')) d.createObjectStore('param_matrix', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('references')) d.createObjectStore('references', { keyPath: 'id', autoIncrement: true });
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
     req.onerror = (e) => reject(e.target.error);
@@ -957,7 +1001,7 @@ let _mirrorTimer = null;
 function scheduleMirror() { clearTimeout(_mirrorTimer); _mirrorTimer = setTimeout(mirrorToLocalStorage, 2000); }
 async function mirrorToLocalStorage() {
   try {
-    const stores = ['pages', 'settings', 'chat_history', 'literature', 'steps', 'goals', 'param_matrix'];
+    const stores = ['pages', 'settings', 'chat_history', 'literature', 'steps', 'goals', 'param_matrix', 'references'];
     const snap = { _v: 1, _ts: new Date().toISOString(), stores: {} };
     for (const s of stores) { try { snap.stores[s] = await _dbGetAll(s) || []; } catch(e) { snap.stores[s] = []; } }
     const json = JSON.stringify(snap);
@@ -1053,8 +1097,8 @@ function toast(msg, color) {
 window.toast = toast;
 
 // ═══════ Phase Management ═══════
-const PHASES = ['issue', 'literature', 'goals', 'experimental', 'results', 'paper'];
-const PHASE_ORDER = { issue: 0, literature: 1, goals: 2, experimental: 3, results: 4, paper: 5 };
+const PHASES = ['issue', 'literature', 'references', 'goals', 'experimental', 'results', 'paper'];
+const PHASE_ORDER = { issue: 0, literature: 1, references: 2, goals: 3, experimental: 4, results: 5, paper: 6 };
 let activePhase = 'issue';
 let unlockedPhase = 1; // first one always unlocked
 
@@ -1097,6 +1141,7 @@ function phaseHasContent(phase) {
   // Quick check — if there's demo data or user content
   if (phase === 'issue') return true; // always unlocked
   if (phase === 'literature') return window._litCache?.length > 0;
+  if (phase === 'references') return window._refCache?.length > 0;
   if (phase === 'goals') return window._goalCache?.length > 0;
   if (phase === 'experimental') return window._stepCache?.length > 0;
   if (phase === 'results') return window._stepCache?.some(s => s.results);
@@ -1245,6 +1290,7 @@ function refreshPhaseContent(phase) {
   switch(phase) {
     case 'issue': refreshIssuePhase(); break;
     case 'literature': refreshLiteraturePhase(); break;
+    case 'references': refreshReferencesPhase(); break;
     case 'goals': refreshGoalsPhase(); break;
     case 'experimental': refreshExperimentalPhase(); break;
     case 'results': refreshResultsPhase(); break;
@@ -1739,6 +1785,282 @@ window.deleteLitById = deleteLitById;
 function editLit(id) { showLitForm(id); }
 window.editLit = editLit;
 
+// ═══════ References (BibGuru-style citation manager) ═══════
+window._refCache = [];
+let currentRefStyle = 'apa';
+
+async function refreshReferencesPhase() {
+  window._refCache = await dbGetAll('references') || [];
+  renderReferenceList(window._refCache);
+}
+
+function onRefStyleChange() {
+  currentRefStyle = document.getElementById('refStyle').value;
+  renderReferenceList(window._refCache);
+}
+window.onRefStyleChange = onRefStyleChange;
+
+function showRefLoading(show) {
+  document.getElementById('refLoading').classList.toggle('show', show);
+}
+
+function renderReferenceList(refs) {
+  const container = document.getElementById('refList');
+  const exportBar = document.getElementById('refExportBar');
+  const countEl = document.getElementById('refCount');
+
+  if (!refs || refs.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:16px">No citations yet. Search by DOI or title above.</p>';
+    exportBar.style.display = 'none';
+    return;
+  }
+
+  exportBar.style.display = 'flex';
+  countEl.textContent = `${refs.length} citation${refs.length !== 1 ? 's' : ''}`;
+
+  container.innerHTML = refs.map((ref, i) => {
+    const formatted = formatCitation(ref, currentRefStyle);
+    return `
+      <div class="ref-card">
+        <div class="ref-index">[${i + 1}]</div>
+        <div class="ref-text">${escHtml(formatted)}</div>
+        <div class="ref-actions">
+          <button class="btn sm" onclick="copyRef(${ref.id})" title="Copy citation">📋</button>
+          <button class="btn sm" onclick="deleteRef(${ref.id})" title="Delete" style="color:var(--red)">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function formatCitation(ref, style) {
+  const authors = ref.authors || 'Unknown Author';
+  const year = ref.year || 'n.d.';
+  const title = ref.title || 'Untitled';
+  const journal = ref.journal || '';
+  const volume = ref.volume || '';
+  const pages = ref.pages || '';
+  const doi = ref.doi || '';
+
+  switch (style) {
+    case 'apa': return formatAPA(authors, year, title, journal, volume, pages, doi);
+    case 'vancouver': return formatVancouver(authors, year, title, journal, volume, pages, doi);
+    case 'acs': return formatACS(authors, year, title, journal, volume, pages, doi);
+    case 'chicago': return formatChicago(authors, year, title, journal, volume, pages, doi);
+    case 'harvard': return formatHarvard(authors, year, title, journal, volume, pages, doi);
+    default: return formatAPA(authors, year, title, journal, volume, pages, doi);
+  }
+}
+
+function formatAPA(authors, year, title, journal, volume, pages, doi) {
+  let s = `${authors} (${year}). ${title}.`;
+  if (journal) s += ` <i>${journal}</i>`;
+  if (volume) s += `, ${volume}`;
+  if (pages) s += `, ${pages}`;
+  if (doi) s += `. https://doi.org/${doi}`;
+  return s;
+}
+
+function formatVancouver(authors, year, title, journal, volume, pages, doi) {
+  let s = `${authors}. ${title}.`;
+  if (journal) s += ` ${journal}.`;
+  if (year) s += ` ${year}`;
+  if (volume) s += `;${volume}`;
+  if (pages) s += `:${pages}`;
+  if (doi) s += `. DOI: ${doi}`;
+  return s;
+}
+
+function formatACS(authors, year, title, journal, volume, pages, doi) {
+  let s = `${authors} ${title}`;
+  if (journal) s += ` <i>${journal}</i>`;
+  if (year) s += ` <b>${year}</b>`;
+  if (volume) s += `, ${volume}`;
+  if (pages) s += `, ${pages}`;
+  if (doi) s += `. DOI: ${doi}`;
+  return s;
+}
+
+function formatChicago(authors, year, title, journal, volume, pages, doi) {
+  let s = `${authors}. "${title}."`;
+  if (journal) s += ` <i>${journal}</i>`;
+  if (volume) s += ` ${volume}`;
+  if (pages) s += ` (${year}): ${pages}`;
+  else if (year) s += ` (${year})`;
+  if (doi) s += `. https://doi.org/${doi}`;
+  return s;
+}
+
+function formatHarvard(authors, year, title, journal, volume, pages, doi) {
+  let s = `${authors} (${year}) '${title}'`;
+  if (journal) s += `, <i>${journal}</i>`;
+  if (volume) s += `, ${volume}`;
+  if (pages) s += `, pp. ${pages}`;
+  if (doi) s += `. doi: ${doi}`;
+  return s;
+}
+
+async function searchReference() {
+  const query = document.getElementById('refSearch').value.trim();
+  if (!query) { toast('Enter a DOI or title', 'var(--warn)'); return; }
+  showRefLoading(true);
+
+  try {
+    let item;
+    if (query.startsWith('10.')) {
+      // Direct DOI lookup
+      const resp = await fetch(`https://api.crossref.org/works/${encodeURIComponent(query)}`);
+      if (!resp.ok) throw new Error('DOI not found');
+      const data = await resp.json();
+      item = data.message;
+      addReferenceFromCrossref(item);
+    } else {
+      // Search by title
+      const resp = await fetch(`https://api.crossref.org/works?query=${encodeURIComponent(query)}&rows=5&select=title,author,container-title,published-print,volume,page,DOI`);
+      if (!resp.ok) throw new Error('Search failed');
+      const data = await resp.json();
+      showSearchResults(data.message.items);
+    }
+  } catch (e) {
+    toast('Crossref search failed: ' + e.message, 'var(--red)');
+  }
+  showRefLoading(false);
+}
+window.searchReference = searchReference;
+
+function showSearchResults(items) {
+  if (!items || items.length === 0) {
+    document.getElementById('refList').innerHTML = '<p style="color:var(--muted);font-size:12px;padding:16px">No results found.</p>';
+    return;
+  }
+
+  document.getElementById('refList').innerHTML = items.map((item, i) => {
+    const title = item.title?.[0] || 'Untitled';
+    const authors = extractAuthors(item.author);
+    const journal = item['container-title']?.[0] || '';
+    const year = extractYear(item);
+    const doi = item.DOI || '';
+    return `
+      <div class="ref-card" style="cursor:pointer" onclick="addReferenceFromCrossrefById(${i})">
+        <div class="ref-index">${i + 1}</div>
+        <div class="ref-text">
+          <strong>${escHtml(title)}</strong><br>
+          <span style="color:var(--muted)">${escHtml(authors)} · ${escHtml(journal)} · ${year} ${doi ? '· DOI: ' + escHtml(doi) : ''}</span>
+        </div>
+        <div class="ref-actions">
+          <button class="btn prim sm" onclick="event.stopPropagation();addReferenceFromCrossrefById(${i})">+ Add</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Store search results temporarily
+  window._refSearchResults = items;
+}
+
+let _refSearchResults = [];
+window._refSearchResults = _refSearchResults;
+
+function addReferenceFromCrossrefById(idx) {
+  const items = window._refSearchResults || [];
+  if (items[idx]) addReferenceFromCrossref(items[idx]);
+}
+
+async function addReferenceFromCrossref(item) {
+  const ref = {
+    title: item.title?.[0] || (typeof item.title === 'string' ? item.title : 'Untitled'),
+    authors: extractAuthors(item.author),
+    journal: item['container-title']?.[0] || (typeof item['container-title'] === 'string' ? item['container-title'] : '') || '',
+    year: extractYear(item),
+    volume: item.volume || '',
+    pages: item.page || '',
+    doi: item.DOI || '',
+    createdAt: new Date().toISOString()
+  };
+
+  const id = await dbPut('references', ref);
+  ref.id = typeof id === 'number' ? id : (window._refCache.length + 1);
+
+  // Add to cache if not duplicate
+  const dup = window._refCache.find(r => r.doi === ref.doi && ref.doi);
+  if (!dup) {
+    window._refCache.unshift(ref);
+  }
+  renderReferenceList(window._refCache);
+  checkPhaseUnlocks();
+  toast('Citation added ✓');
+}
+window.addReferenceFromCrossref = addReferenceFromCrossref;
+
+function extractAuthors(authorList) {
+  if (!authorList || !Array.isArray(authorList)) return 'Unknown Author';
+  const names = authorList.map(a => {
+    const family = a.family || '';
+    const given = a.given || '';
+    if (given && family) return `${family}, ${given.charAt(0)}.`;
+    if (family) return family;
+    return a.name || '';
+  });
+  if (names.length === 0) return 'Unknown Author';
+  if (names.length <= 3) return names.join(', ');
+  return `${names.slice(0, 3).join(', ')}, et al.`;
+}
+
+function extractYear(item) {
+  const dateParts = item['published-print']?.['date-parts']?.[0] ||
+                    item['published-online']?.['date-parts']?.[0] ||
+                    item['issued']?.['date-parts']?.[0] ||
+                    item['created']?.['date-parts']?.[0];
+  if (dateParts && dateParts[0]) return String(dateParts[0]);
+  return 'n.d.';
+}
+
+async function copyRef(id) {
+  const ref = window._refCache.find(r => r.id === id);
+  if (!ref) return;
+  const formatted = formatCitation(ref, currentRefStyle);
+  try {
+    await navigator.clipboard.writeText(formatted);
+    toast('Citation copied ✓');
+  } catch (e) {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = formatted;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Citation copied ✓');
+  }
+}
+window.copyRef = copyRef;
+
+async function deleteRef(id) {
+  if (!confirm('Delete this citation?')) return;
+  await dbDelete('references', id);
+  window._refCache = window._refCache.filter(r => r.id !== id);
+  renderReferenceList(window._refCache);
+  toast('Deleted');
+}
+window.deleteRef = deleteRef;
+
+async function exportAllRefs() {
+  const refs = window._refCache || [];
+  if (refs.length === 0) { toast('No citations to export', 'var(--warn)'); return; }
+  const text = refs.map((ref, i) => `[${i + 1}] ${formatCitation(ref, currentRefStyle)}`).join('\n\n');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(`Exported ${refs.length} citations ✓`);
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(`Exported ${refs.length} citations ✓`);
+  }
+}
+window.exportAllRefs = exportAllRefs;
+
 // ═══════ Goals ═══════
 async function addGoal() {
   const desc = prompt('Goal description:');
@@ -2107,6 +2429,7 @@ async function init() {
 
   await buildSidebar();
   await refreshLiteraturePhase();
+  await refreshReferencesPhase();
   await refreshGoalsPhase();
   await refreshExperimentalPhase();
   await refreshResultsPhase();
