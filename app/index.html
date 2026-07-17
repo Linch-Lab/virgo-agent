@@ -923,7 +923,9 @@ let authUser = null;
 try {
   const sbCtor = window.supabase?.createClient;
   if (sbCtor) {
-    supabase = sbCtor(SUPABASE_URL, SUPABASE_ANON_KEY);
+    supabase = sbCtor(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { storage: localStorage, autoRefreshToken: true, persistSession: true, detectSessionInUrl: false }
+    });
     supabaseReady = true;
   }
 } catch(e) { console.warn('Supabase init failed', e); }
