@@ -1042,9 +1042,12 @@ async function showAuthModal() {
   document.getElementById('authModal').classList.add('show');
 }
 window.showAuthModal = showAuthModal;
-function handleAuthClick() {
+async function handleAuthClick() {
   if (authUser) {
-    if (supabase) supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
+    // Also clear any cached session manually
+    try { localStorage.removeItem('supabase.auth.token'); } catch(e) {}
+    try { localStorage.removeItem('sb-mtshudmynuedafqixbvj-auth-token'); } catch(e) {}
     authUser = null;
     updateAuthStatus();
     window.location.href = '/';
@@ -2041,6 +2044,9 @@ let _refSearchResults = [];
 window._refSearchResults = _refSearchResults;
 
 function addReferenceFromCrossrefById(idx) {
+window.addReferenceFromCrossrefById = addReferenceFromCrossrefById;
+async function linkSkill() { toast('Link Skills coming soon'); }
+window.linkSkill = linkSkill;
   const items = window._refSearchResults || [];
   if (items[idx]) addReferenceFromCrossref(items[idx]);
 }
