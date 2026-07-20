@@ -1748,21 +1748,6 @@ async function addParamRow() {
 }
 window.addParamRow = addParamRow;
 
-async function saveStep() {
-  const step = {
-    title: document.getElementById('stepTitle').value,
-    fixed: document.getElementById('stepFixed').value,
-    variable: document.getElementById('stepVar').value,
-    detect: document.getElementById('stepDetect').value,
-    benchmark: document.getElementById('stepBench').value
-  };
-  const id = document.getElementById('stepModal').dataset.editId;
-  if (id) { step.id = parseInt(id); await dbPut('exp_steps', step); }
-  else { await dbPut('exp_steps', step); }
-  closeStepModal();
-  refreshStepNav();
-  toast('Step saved ✓');
-}
 function showStepModal() {
   document.getElementById('stepModal').classList.add('show');
   document.getElementById('stepTitle').value = '';
