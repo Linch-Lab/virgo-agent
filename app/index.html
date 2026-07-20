@@ -667,6 +667,7 @@ body.presenting .present-hint { display: block; }
       <button class="phase-tab locked" data-phase="references">📖 References</button>
       <button class="phase-tab locked" data-phase="goals">🏁 GOALS</button>
       <button class="phase-tab locked" data-phase="experimental">🔬 EXPERIMENTAL</button>
+      <button class="phase-tab locked" data-phase="parameters">📐 PARAMETERS</button>
       <button class="phase-tab locked" data-phase="results">📊 RESULTS</button>
       <button class="phase-tab locked" data-phase="paper">📝 PAPER</button>
       <div class="phase-spacer"></div>
@@ -745,24 +746,29 @@ body.presenting .present-hint { display: block; }
 
       <!-- EXPERIMENTAL -->
       <div class="phase-panel" id="panel-experimental">
-        <!-- Parameter Matrix -->
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <h3 style="margin:0">🧪 Parameter Matrix</h3>
-            <div style="display:flex;gap:4px">
-              <button class="btn sm" onclick="addParamColumn()">+ Column</button>
-              <button class="btn sm" onclick="addParamRow()">+ Row</button>
-            </div>
-          </div>
-          <div class="param-matrix" id="paramMatrix"></div>
-        </div>
-
         <!-- Step Navigation -->
         <div class="card">
           <div class="step-nav" id="stepNav"></div>
 
           <!-- Active Step Content -->
           <div id="activeStepContent"></div>
+        </div>
+      </div>
+
+      <!-- PARAMETERS -->
+      <div class="phase-panel" id="panel-parameters">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <h3 style="margin:0">📐 Parameters Matrix</h3>
+            <div style="display:flex;gap:4px">
+              <button class="btn sm" onclick="addParamColumn()">+ Column</button>
+              <button class="btn sm" onclick="addParamRow()">+ Row</button>
+            </div>
+          </div>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+            Define all experimental parameters — fixed and variable. Each row = one experimental run. Upload raw data files for result columns.
+          </p>
+          <div class="param-matrix" id="paramMatrix"></div>
         </div>
       </div>
 
@@ -774,6 +780,17 @@ body.presenting .present-hint { display: block; }
             <button class="btn prim" onclick="generateReport()">📄 Generate Report</button>
           </div>
           <div class="results-grid" id="resultsGrid" style="margin-top:12px"></div>
+        </div>
+        <!-- Link Skills (pulls data from Parameters) -->
+        <div class="card" style="margin-top:8px">
+          <h3 style="margin:0 0 8px 0">🔗 Link Skills</h3>
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+            Select data columns from Parameters to generate plots and analyses.
+          </p>
+          <div id="linkSkillsArea">
+            <button class="btn sm" onclick="linkSkill()">+ Link Skill</button>
+            <span style="color:var(--muted);font-size:11px;margin-left:8px">Coming soon — will query Parameters data</span>
+          </div>
         </div>
       </div>
 
@@ -1112,8 +1129,8 @@ function toast(msg, color) {
 window.toast = toast;
 
 // ═══════ Phase Management ═══════
-const PHASES = ['issue', 'literature', 'references', 'goals', 'experimental', 'results', 'paper'];
-const PHASE_ORDER = { issue: 0, literature: 1, references: 2, goals: 3, experimental: 4, results: 5, paper: 6 };
+const PHASES = ['issue', 'literature', 'references', 'goals', 'experimental', 'parameters', 'results', 'paper'];
+const PHASE_ORDER = { issue: 0, literature: 1, references: 2, goals: 3, experimental: 4, parameters: 5, results: 6, paper: 7 };
 let activePhase = 'issue';
 let unlockedPhase = 1; // first one always unlocked
 
@@ -1159,6 +1176,7 @@ function phaseHasContent(phase) {
   if (phase === 'references') return window._refCache?.length > 0;
   if (phase === 'goals') return window._goalCache?.length > 0;
   if (phase === 'experimental') return window._stepCache?.length > 0;
+  if (phase === 'parameters') return true; // always available
   if (phase === 'results') return window._stepCache?.some(s => s.results);
   if (phase === 'paper') return true; // auto-generated
   return false;
@@ -1308,6 +1326,7 @@ function refreshPhaseContent(phase) {
     case 'references': refreshReferencesPhase(); break;
     case 'goals': refreshGoalsPhase(); break;
     case 'experimental': refreshExperimentalPhase(); break;
+    case 'parameters': refreshParamMatrix(); break;
     case 'results': refreshResultsPhase(); break;
     case 'paper': refreshPaperPhase(); break;
   }
@@ -1608,28 +1627,61 @@ function renderStepResults(step) {
   }, 200);
 }
 
-// Parameter Matrix
+// ═══════ Parameter Matrix (dynamic columns + file upload) ═══════
+const PARAM_DEFAULT_COLS = [
+  { name: 'Temperature / °C', type: 'variable' },
+  { name: 'Time / min', type: 'variable' },
+  { name: 'CH4:Ar ratio', type: 'fixed' },
+  { name: 'ECSA / m² g⁻¹', type: 'result' },
+  { name: 'η @ 10 mA cm⁻² / mV', type: 'result' }
+];
+
+async function getParamCols() {
+  let cols = await dbGetAll('param_columns') || [];
+  if (cols.length === 0) {
+    for (const c of PARAM_DEFAULT_COLS) {
+      await dbPut('param_columns', { name: c.name, type: c.type });
+    }
+    cols = await dbGetAll('param_columns') || [];
+  }
+  return cols;
+}
+
+async function getParamRows() {
+  let rows = await dbGetAll('param_rows') || [];
+  if (rows.length === 0) {
+    for (let i = 0; i < 5; i++) {
+      await dbPut('param_rows', { sampleName: `Sample ${i+1}`, values: {}, files: {} });
+    }
+    rows = await dbGetAll('param_rows') || [];
+  }
+  return rows;
+}
+
 async function refreshParamMatrix() {
   const container = document.getElementById('paramMatrix');
-  const rows = await dbGetAll('param_matrix') || [];
-  if (rows.length === 0) {
-    // Default columns
-    rows.push({ row: 1, sampleName: 'Ni-850', param1: '850', param2: '30', param3: '1:4', dataFiles: '' });
-    rows.push({ row: 2, sampleName: 'Ni-900', param1: '900', param2: '30', param3: '1:4', dataFiles: '' });
-    rows.push({ row: 3, sampleName: 'Ni-970', param1: '970', param2: '30', param3: '1:4', dataFiles: '' });
-  }
-  const params = ['T/°C', 't/min', 'CH4:Ar'];
+  if (!container) return;
+  const cols = await getParamCols();
+  const rows = await getParamRows();
   let html = '<table><thead><tr><th>Sample Name</th>';
-  params.forEach(p => html += `<th>${p}</th>`);
-  html += '<th>Data Files</th></tr></thead><tbody>';
-  rows.forEach((r, i) => {
-    html += `<tr>
-      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'sampleName', this.textContent)" data-row="${i}">${escHtml(r.sampleName || '')}</td>
-      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param1', this.textContent)">${escHtml(r.param1 || '')}</td>
-      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param2', this.textContent)">${escHtml(r.param2 || '')}</td>
-      <td contenteditable="true" oninput="updateParamCell(${r.id || 0}, 'param3', this.textContent)">${escHtml(r.param3 || '')}</td>
-      <td>${r.dataFiles ? escHtml(r.dataFiles) : '<button class="btn sm" onclick="uploadDataFile()">📂 Upload</button>'}</td>
-    </tr>`;
+  cols.forEach(c => {
+    const icon = c.type === 'result' ? '📊' : c.type === 'fixed' ? '🔒' : '🔧';
+    html += `<th title="${c.type}">${icon} ${escHtml(c.name)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+  rows.forEach(r => {
+    html += '<tr>';
+    html += `<td contenteditable="true" oninput="updateParamCell(${r.id},'sampleName',this.textContent)">${escHtml(r.sampleName||'')}</td>`;
+    cols.forEach(c => {
+      const val = (r.values && r.values[c.id]) ? escHtml(r.values[c.id]) : '';
+      if (c.type === 'result') {
+        const fname = (r.files && r.files[c.id]) ? r.files[c.id].name : '';
+        html += `<td style="min-width:120px">${fname ? `<span style="font-size:10px;color:var(--acc)">📎 ${escHtml(fname)}</span><br>` : ''}<input style="width:80px;font-size:11px" placeholder="benchmark" value="${val}" onchange="updateParamCell(${r.id},'val_${c.id}',this.value)"><button class="btn sm" style="font-size:9px;padding:2px 4px" onclick="uploadParamFile(${r.id},${c.id})">📂</button></td>`;
+      } else {
+        html += `<td contenteditable="true" oninput="updateParamCell(${r.id},'val_${c.id}',this.textContent)">${val}</td>`;
+      }
+    });
+    html += '</tr>';
   });
   html += '</tbody></table>';
   container.innerHTML = html;
@@ -1643,45 +1695,74 @@ async function updateParamCell(id, field, value) {
   window._paramEditTimer = setTimeout(async () => {
     for (const k in window._paramEditQueue) {
       const { id, field, value } = window._paramEditQueue[k];
-      if (id) {
-        const row = await dbGet('param_matrix', id);
-        if (row) { row[field] = value; await dbPut('param_matrix', row); }
+      const row = await dbGet('param_rows', id);
+      if (!row) continue;
+      if (field === 'sampleName') { row.sampleName = value; }
+      else if (field.startsWith('val_')) {
+        const colId = parseInt(field.replace('val_', ''));
+        if (!row.values) row.values = {};
+        row.values[colId] = value;
       }
+      await dbPut('param_rows', row);
     }
     window._paramEditQueue = {};
-  }, 800);
+  }, 600);
 }
 window.updateParamCell = updateParamCell;
 
+async function uploadParamFile(rowId, colId) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.csv,.txt,.xlsx,.json,.dat,.xls';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { toast('File too large (>50MB)', 'var(--warn)'); return; }
+    const row = await dbGet('param_rows', rowId);
+    if (!row) return;
+    if (!row.files) row.files = {};
+    const buf = await file.arrayBuffer();
+    const storeKey = `pf_${rowId}_${colId}`;
+    await dbPut('param_files', { id: storeKey, name: file.name, size: file.size, type: file.type, data: buf });
+    row.files[colId] = { name: file.name, size: file.size, type: file.type };
+    await dbPut('param_rows', row);
+    refreshParamMatrix();
+    toast(`Uploaded: ${file.name}`);
+  };
+  input.click();
+}
+window.uploadParamFile = uploadParamFile;
+
 async function addParamColumn() {
-  const rows = await dbGetAll('param_matrix') || [];
-  if (rows.length === 0) {
-    await dbPut('param_matrix', { row: 1, sampleName: 'Sample 1', param1: '', param2: '', param3: '', dataFiles: '' });
-  }
-  toast('Column added (extend schema)');
+  const name = prompt('Column name:');
+  if (!name) return;
+  const type = prompt('Type: "fixed", "variable", or "result"', 'variable');
+  await dbPut('param_columns', { name, type: type || 'variable' });
   refreshParamMatrix();
 }
 window.addParamColumn = addParamColumn;
 
 async function addParamRow() {
-  const rows = await dbGetAll('param_matrix') || [];
-  const nextRow = rows.length + 1;
-  await dbPut('param_matrix', { row: nextRow, sampleName: `Sample ${nextRow}`, param1: '', param2: '', param3: '', dataFiles: '' });
+  await dbPut('param_rows', { sampleName: `Sample ${Date.now()%10000}`, values: {}, files: {} });
   refreshParamMatrix();
-  toast('Row added ✓');
 }
 window.addParamRow = addParamRow;
 
-function uploadDataFile() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.csv,.txt';
-  input.onchange = () => toast('File selected (mock upload)');
-  input.click();
+async function saveStep() {
+  const step = {
+    title: document.getElementById('stepTitle').value,
+    fixed: document.getElementById('stepFixed').value,
+    variable: document.getElementById('stepVar').value,
+    detect: document.getElementById('stepDetect').value,
+    benchmark: document.getElementById('stepBench').value
+  };
+  const id = document.getElementById('stepModal').dataset.editId;
+  if (id) { step.id = parseInt(id); await dbPut('exp_steps', step); }
+  else { await dbPut('exp_steps', step); }
+  closeStepModal();
+  refreshStepNav();
+  toast('Step saved ✓');
 }
-window.uploadDataFile = uploadDataFile;
-
-// ═══════ Step Modal ═══════
 function showStepModal() {
   document.getElementById('stepModal').classList.add('show');
   document.getElementById('stepTitle').value = '';
@@ -2464,7 +2545,7 @@ We demonstrate a PGM-free AEMWE stack achieving 4.1 A/cm² at 2.0V with excellen
 [4] Miller HA et al. (2025). J. Power Sources. DOI: 10.1016/j.jpowsour.2025.230123
 [5] Serban D et al. (2024). Energy Environ. Sci. DOI: 10.1039/D4EE01234K
 [6] Guo W et al. (2026). Nat. Commun. DOI: 10.1038/s41467-026-40123`});
-  unlockedPhase = 5; // all unlocked for demo
+  unlockedPhase = 7; // all unlocked for demo
   document.querySelectorAll('.phase-tab').forEach(t => t.classList.remove('locked'));
 
   console.log('Demo data seeded ✓');
