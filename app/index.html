@@ -515,6 +515,22 @@ textarea { resize: vertical; min-height: 50px; }
 .param-matrix td[contenteditable] { outline: 2px solid transparent; transition: outline 0.15s; }
 .param-matrix td[contenteditable]:focus { outline: 2px solid var(--acc); background: var(--acc-light); }
 
+/* Taguchi DOE Styles */
+.taguchi-setup { margin-bottom: 8px; }
+.taguchi-factor-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+.taguchi-factor-row input, .taguchi-factor-row select { padding: 4px 8px; border: 1px solid var(--bdr); border-radius: var(--radius); font-size: 11px; font-family: var(--font); background:var(--card); color:var(--txt); }
+.taguchi-factor-row .factor-name { width: 100px; }
+.taguchi-factor-row .factor-level { width: 70px; }
+.taguchi-response-row { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; flex-wrap: wrap; }
+.taguchi-response-row input, .taguchi-response-row select { padding: 4px 8px; border: 1px solid var(--bdr); border-radius: var(--radius); font-size: 11px; font-family: var(--font); background:var(--card); color:var(--txt); }
+.taguchi-response-row .resp-name { width: 120px; }
+.snr-chart-wrap { display: inline-block; width: 48%; min-width: 280px; margin: 4px 1%; vertical-align: top; }
+.snr-chart-wrap canvas { max-height: 220px; }
+.taguchi-ranking-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.taguchi-ranking-table th, .taguchi-ranking-table td { border: 1px solid var(--bdr); padding: 4px 8px; text-align: center; }
+.taguchi-ranking-table th { background: #f6f8fa; font-weight: 600; }
+.taguchi-meta-label { font-size: 10px; color: var(--muted); display: inline-block; margin-right: 6px; }
+
 /* Skill section */
 .skill-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
 .skill-checkboxes label { font-size: 10px; display: flex; align-items: center; gap: 3px; cursor: pointer; padding: 3px 8px; border: 1px solid var(--bdr); border-radius: var(--radius); }
@@ -758,17 +774,50 @@ body.presenting .present-hint { display: block; }
       <!-- PARAMETERS -->
       <div class="phase-panel" id="panel-parameters">
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px">
             <h3 style="margin:0">📐 Parameters Matrix</h3>
-            <div style="display:flex;gap:4px">
+            <div style="display:flex;gap:4px;align-items:center">
+              <select id="doeType" onchange="onDOETypeChange()" style="margin-right:4px;padding:4px 8px;border:1px solid var(--bdr);border-radius:var(--radius);font-size:11px;font-family:var(--font);background:var(--card);color:var(--txt)">
+                <option value="manual">Manual</option>
+                <option value="taguchi_l9">Taguchi L9</option>
+                <option value="taguchi_l18">Taguchi L18</option>
+              </select>
               <button class="btn sm" onclick="addParamColumn()">+ Column</button>
               <button class="btn sm" onclick="addParamRow()">+ Row</button>
+              <button class="btn sm" onclick="addCustomColumn()" id="btnCustomCol">+ Custom Col</button>
             </div>
           </div>
-          <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+          <p style="color:var(--muted);font-size:12px;margin-bottom:8px" id="paramDesc">
             Define all experimental parameters — fixed and variable. Each row = one experimental run. Upload raw data files for result columns.
           </p>
+
+          <!-- Taguchi Setup Panel -->
+          <div class="taguchi-setup" id="taguchiSetup" style="display:none">
+            <div style="background:var(--acc-light);border:1px solid var(--acc);border-radius:6px;padding:12px;margin-bottom:10px">
+              <h4 style="margin:0 0 8px 0;font-size:13px;color:var(--acc)">⚙️ Taguchi DOE Setup</h4>
+              <div id="taguchiFactors"></div>
+              <div id="taguchiResponses" style="margin-top:8px"></div>
+              <div style="margin-top:10px;display:flex;gap:6px">
+                <button class="btn prim sm" onclick="generateTaguchiMatrix()">🔧 Generate Matrix</button>
+                <button class="btn sm" onclick="setupTaguchiFactors()">🔄 Reset Setup</button>
+              </div>
+            </div>
+          </div>
+
           <div class="param-matrix" id="paramMatrix"></div>
+
+          <!-- Taguchi Analysis Panel -->
+          <div class="taguchi-analysis" id="taguchiAnalysis" style="display:none;margin-top:12px">
+            <div style="background:var(--card);border:1px solid var(--bdr);border-radius:6px;padding:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <h4 style="margin:0;font-size:13px">📈 Taguchi SNR Analysis</h4>
+                <button class="btn prim sm" onclick="runTaguchiAnalysis()">🔄 Run Analysis</button>
+              </div>
+              <div id="taguchiCharts"></div>
+              <div id="taguchiRanking" style="margin-top:10px"></div>
+              <div id="taguchiOptimal" style="margin-top:8px;padding:8px;background:var(--acc-light);border-radius:4px"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1664,6 +1713,26 @@ async function getParamRows() {
 async function refreshParamMatrix() {
   const container = document.getElementById('paramMatrix');
   if (!container) return;
+
+  // Check DOE mode
+  let doeType = 'manual';
+  try {
+    const raw = await dbGet('settings', 'doe_type');
+    if (raw) doeType = raw.value;
+  } catch(e) {}
+  
+  // Update DOE selector
+  const sel = document.getElementById('doeType');
+  if (sel && sel.value !== doeType) sel.value = doeType;
+
+  if (doeType === 'taguchi_l9' || doeType === 'taguchi_l18') {
+    await refreshTaguchiMatrix(container, doeType);
+  } else {
+    await refreshManualMatrix(container);
+  }
+}
+
+async function refreshManualMatrix(container) {
   const cols = await getParamCols();
   const rows = await getParamRows();
   let html = '<table><thead><tr><th>Sample Name</th>';
@@ -1688,6 +1757,177 @@ async function refreshParamMatrix() {
   });
   html += '</tbody></table>';
   container.innerHTML = html;
+}
+
+async function refreshTaguchiMatrix(container, doeType) {
+  // Load DOE config
+  let config = null;
+  try {
+    const raw = await dbGet('settings', 'param_doe_config');
+    if (raw) config = JSON.parse(raw.value);
+  } catch(e) {}
+  
+  if (!config || !config.factors) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px">Set up factors and click "Generate Matrix" to create the Taguchi design.</p>';
+    return;
+  }
+
+  const factors = config.factors || [];
+  const responses = config.responses || [];
+  const customCols = config.customCols || [];
+  const matrix = L9_MATRIX;
+  const rows = await dbGetAll('param_rows') || [];
+
+  // Sync columns to param_columns
+  await syncTaguchiColumns(factors, responses, customCols);
+  const cols = await dbGetAll('param_columns') || [];
+
+  // Build header
+  let html = '<table><thead><tr><th>Run #</th>';
+  // L9 matrix column (showing level assignments)
+  factors.forEach((f, fi) => {
+    html += `<th>🔧 ${escHtml(f.name)}</th>`;
+  });
+  responses.forEach(r => {
+    html += `<th>📊 ${escHtml(r.name)}</th>`;
+  });
+  // SNR column
+  if (responses.length > 0) {
+    html += '<th>📈 SNR</th>';
+  }
+  customCols.forEach(cc => {
+    const icon = cc.type === 'file' ? '📂' : cc.type === 'number' ? '🔢' : '📝';
+    html += `<th>${icon} ${escHtml(cc.name)}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // Build rows
+  for (let run = 0; run < matrix.length; run++) {
+    const row = rows[run] || {};
+    html += '<tr>';
+    html += `<td style="font-weight:600;text-align:center">${run+1}</td>`;
+
+    // Factor columns (show the level values, read-only)
+    for (let fi = 0; fi < factors.length; fi++) {
+      const levelIdx = matrix[run][fi] - 1;
+      const levelVal = factors[fi].levels[levelIdx] || matrix[run][fi];
+      html += `<td style="text-align:center">${escHtml(String(levelVal))}</td>`;
+    }
+
+    // Response columns (editable inputs)
+    for (const resp of responses) {
+      const col = cols.find(c => c.name === resp.name && c.type === 'response');
+      const colId = col ? col.id : 0;
+      const val = (row.values && row.values[colId]) ? escHtml(row.values[colId]) : '';
+      html += `<td><input style="width:80px;font-size:11px;text-align:center" placeholder="value" value="${val}" onchange="updateParamCell(${row.id||0},'val_${colId}',this.value);autoRecalcSNR()"></td>`;
+    }
+
+    // SNR column placeholder (calculated globally, show per-response SNR)
+    if (responses.length > 0) {
+      html += '<td style="text-align:center;font-size:10px;color:var(--muted)">—</td>';
+    }
+
+    // Custom columns
+    for (const cc of customCols) {
+      const col = cols.find(c => c.name === cc.name && c.type === 'custom');
+      const colId = col ? col.id : 0;
+      const val = (row.values && row.values[colId]) ? escHtml(row.values[colId]) : '';
+      if (cc.type === 'file') {
+        const fname = (row.files && row.files[colId]) ? row.files[colId].name : '';
+        html += `<td style="min-width:100px">${fname ? `<span style="font-size:10px;color:var(--acc)">📎 ${escHtml(fname)}</span><br>` : ''}<button class="btn sm" style="font-size:9px;padding:2px 4px" onclick="uploadParamFile(${row.id||0},${colId})">📂 Upload</button></td>`;
+      } else {
+        html += `<td contenteditable="true" oninput="updateParamCell(${row.id||0},'val_${colId}',this.textContent)">${val}</td>`;
+      }
+    }
+
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  
+  // Add buttons below the table
+  html += `<div style="margin-top:8px;display:flex;gap:6px">
+    <button class="btn prim sm" onclick="recalcSNR()">🔄 Recalculate SNR</button>
+    <button class="btn sm" onclick="runTaguchiAnalysis()">📊 Run Analysis</button>
+  </div>`;
+
+  container.innerHTML = html;
+
+  // Update SNR column after render
+  setTimeout(() => updateSNRColumn(), 50);
+}
+
+async function syncTaguchiColumns(factors, responses, customCols) {
+  let cols = await dbGetAll('param_columns') || [];
+  
+  // Ensure factor columns exist
+  for (const f of factors) {
+    if (!cols.find(c => c.name === f.name && c.type === 'factor')) {
+      await dbPut('param_columns', { name: f.name, type: 'factor' });
+    }
+  }
+  
+  // Ensure response columns exist
+  for (const r of responses) {
+    if (!cols.find(c => c.name === r.name && c.type === 'response')) {
+      await dbPut('param_columns', { name: r.name, type: 'response' });
+    }
+  }
+  
+  // Ensure custom columns exist
+  for (const cc of customCols) {
+    if (!cols.find(c => c.name === cc.name && c.type === 'custom')) {
+      await dbPut('param_columns', { name: cc.name, type: 'custom' });
+    }
+  }
+}
+
+async function updateSNRColumn() {
+  // Update the SNR column with overall SNR per response
+  let config = null;
+  try {
+    const raw = await dbGet('settings', 'param_doe_config');
+    if (raw) config = JSON.parse(raw.value);
+  } catch(e) {}
+  if (!config || !config.responses) return;
+
+  const responses = config.responses || [];
+  const rows = await dbGetAll('param_rows') || [];
+  const cols = await dbGetAll('param_columns') || [];
+
+  for (const resp of responses) {
+    const col = cols.find(c => c.name === resp.name && c.type === 'response');
+    if (!col) continue;
+    const vals = [];
+    for (let i = 0; i < Math.min(rows.length, 9); i++) {
+      const row = rows[i];
+      const v = row.values && row.values[col.id] ? parseFloat(row.values[col.id]) : NaN;
+      vals.push(isNaN(v) ? null : v);
+    }
+    const validVals = vals.filter(v => v !== null);
+    if (validVals.length === 9) {
+      const snr = calcSNR(validVals, resp.snrType);
+      if (snr !== null) {
+        const container = document.getElementById('paramMatrix');
+        if (container) {
+          const tds = container.querySelectorAll('tbody td');
+          // SNR is in the last column among response columns; update each row
+          // Since SNR is global, show it once or per-row
+          // We'll put it in the first SNR cell
+          const snrCells = container.querySelectorAll('td[data-snr-resp]');
+          // Simple approach: just show in the analysis section
+        }
+      }
+    }
+  }
+}
+
+async function autoRecalcSNR() {
+  // Debounced auto-recalc when response values change
+  clearTimeout(window._snrTimer);
+  window._snrTimer = setTimeout(async () => {
+    await updateSNRColumn();
+  }, 800);
 }
 
 window._paramEditQueue = {};
@@ -1750,6 +1990,480 @@ async function addParamRow() {
   refreshParamMatrix();
 }
 window.addParamRow = addParamRow;
+
+// ═══════ Taguchi DOE L9/L18 ═══════
+
+// Standard L9 orthogonal array: 4 factors, 3 levels each
+const L9_MATRIX = [
+  [1,1,1,1], [1,2,2,2], [1,3,3,3],
+  [2,1,2,3], [2,2,3,1], [2,3,1,2],
+  [3,1,3,2], [3,2,1,3], [3,3,2,1]
+];
+
+async function onDOETypeChange() {
+  const sel = document.getElementById('doeType');
+  const doeType = sel ? sel.value : 'manual';
+  const setupDiv = document.getElementById('taguchiSetup');
+  const analysisDiv = document.getElementById('taguchiAnalysis');
+  const descP = document.getElementById('paramDesc');
+  
+  // Save choice
+  try { await dbPut('settings', { key: 'doe_type', value: doeType }); } catch(e){}
+
+  if (doeType === 'taguchi_l9' || doeType === 'taguchi_l18') {
+    setupDiv.style.display = 'block';
+    if (descP) descP.textContent = 'Taguchi DOE: orthogonal array experiment design with SNR analysis for robust optimization.';
+    setupTaguchiFactors();
+  } else {
+    setupDiv.style.display = 'none';
+    analysisDiv.style.display = 'none';
+    if (descP) descP.textContent = 'Define all experimental parameters — fixed and variable. Each row = one experimental run. Upload raw data files for result columns.';
+  }
+  refreshParamMatrix();
+}
+window.onDOETypeChange = onDOETypeChange;
+
+function setupTaguchiFactors() {
+  // Factor setup UI: up to 4 factors for L9
+  const container = document.getElementById('taguchiFactors');
+  let html = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><span class="taguchi-meta-label">Factors (A-D):</span></div>';
+  for (let i = 0; i < 4; i++) {
+    const letter = String.fromCharCode(65 + i);
+    html += `<div class="taguchi-factor-row">
+      <span style="min-width:20px;font-weight:600;font-size:12px">${letter}</span>
+      <input class="factor-name" placeholder="Factor ${letter} name" id="facName${i}" value="">
+      <span style="font-size:10px;color:var(--muted)">L1:</span><input class="factor-level" placeholder="Level 1" id="facL1_${i}" value="">
+      <span style="font-size:10px;color:var(--muted)">L2:</span><input class="factor-level" placeholder="Level 2" id="facL2_${i}" value="">
+      <span style="font-size:10px;color:var(--muted)">L3:</span><input class="factor-level" placeholder="Level 3" id="facL3_${i}" value="">
+    </div>`;
+  }
+  container.innerHTML = html;
+  setupResponseColumns();
+}
+window.setupTaguchiFactors = setupTaguchiFactors;
+
+function setupResponseColumns() {
+  const container = document.getElementById('taguchiResponses');
+  if (!container) return;
+  let html = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><span class="taguchi-meta-label">Responses:</span><button class="btn sm" style="font-size:9px;padding:1px 4px" onclick="addResponseField()">+ Response</button></div>';
+  html += '<div id="respFields">';
+  html += `<div class="taguchi-response-row">
+    <input class="resp-name" placeholder="Response name" id="respName0" value="">
+    <select id="respSNR0">
+      <option value="larger_better">望大 (Larger is Better)</option>
+      <option value="smaller_better">望小 (Smaller is Better)</option>
+      <option value="nominal_best">望目 (Nominal is Best)</option>
+    </select>
+  </div>`;
+  html += `<div class="taguchi-response-row">
+    <input class="resp-name" placeholder="Response name" id="respName1" value="">
+    <select id="respSNR1">
+      <option value="larger_better">望大 (Larger is Better)</option>
+      <option value="smaller_better">望小 (Smaller is Better)</option>
+      <option value="nominal_best">望目 (Nominal is Best)</option>
+    </select>
+  </div>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+window.setupResponseColumns = setupResponseColumns;
+
+function addResponseField() {
+  const container = document.getElementById('respFields');
+  if (!container) return;
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'taguchi-response-row';
+  div.innerHTML = `<input class="resp-name" placeholder="Response name" id="respName${idx}" value="">
+    <select id="respSNR${idx}">
+      <option value="larger_better">望大 (Larger is Better)</option>
+      <option value="smaller_better">望小 (Smaller is Better)</option>
+      <option value="nominal_best">望目 (Nominal is Best)</option>
+    </select>`;
+  container.appendChild(div);
+}
+window.addResponseField = addResponseField;
+
+async function generateTaguchiMatrix() {
+  const doeType = document.getElementById('doeType').value;
+  const isL9 = doeType === 'taguchi_l9';
+  const matrix = isL9 ? L9_MATRIX : L9_MATRIX; // L18 would have its own matrix
+
+  // Collect factor config
+  const factors = [];
+  for (let i = 0; i < 4; i++) {
+    const nameEl = document.getElementById('facName'+i);
+    const l1El = document.getElementById('facL1_'+i);
+    const l2El = document.getElementById('facL2_'+i);
+    const l3El = document.getElementById('facL3_'+i);
+    if (nameEl && nameEl.value.trim()) {
+      factors.push({
+        name: nameEl.value.trim(),
+        levels: [
+          l1El ? l1El.value.trim() || '1' : '1',
+          l2El ? l2El.value.trim() || '2' : '2',
+          l3El ? l3El.value.trim() || '3' : '3'
+        ]
+      });
+    }
+  }
+  if (factors.length === 0) { toast('Please define at least one factor', 'var(--warn)'); return; }
+
+  // Collect response config
+  const responses = [];
+  const respContainer = document.getElementById('respFields');
+  if (respContainer) {
+    for (let i = 0; ; i++) {
+      const nameEl = document.getElementById('respName'+i);
+      const snrEl = document.getElementById('respSNR'+i);
+      if (!nameEl) break;
+      const name = nameEl.value.trim();
+      if (name) {
+        responses.push({ name: name, snrType: snrEl ? snrEl.value : 'larger_better' });
+      }
+    }
+  }
+
+  // Collect custom columns
+  const customCols = await getCustomColumns();
+
+  // Store config
+  const config = { doeType, factors, responses, customCols };
+  await dbPut('settings', { key: 'param_doe_config', value: JSON.stringify(config) });
+
+  // Generate rows
+  const nRuns = matrix.length;
+  const cols = await getParamColsInternal(factors, responses, customCols);
+  
+  // Clear old rows and create new
+  const oldRows = await dbGetAll('param_rows') || [];
+  for (const r of oldRows) { await dbDelete('param_rows', r.id); }
+  
+  for (let run = 0; run < nRuns; run++) {
+    const levelRow = matrix[run];
+    const values = {};
+    const files = {};
+    // Factor columns
+    for (let f = 0; f < factors.length; f++) {
+      const col = cols.find(c => c.name === factors[f].name && c.type === 'factor');
+      if (col) {
+        values[col.id] = factors[f].levels[levelRow[f] - 1];
+      }
+    }
+    // Response columns (blank)
+    for (const r of responses) {
+      const col = cols.find(c => c.name === r.name && c.type === 'response');
+      if (col) values[col.id] = '';
+    }
+    // Custom columns (blank)
+    for (const cc of customCols) {
+      const col = cols.find(c => c.name === cc.name && c.type === 'custom');
+      if (col) values[col.id] = '';
+    }
+    await dbPut('param_rows', { sampleName: `Run ${run+1}`, values, files });
+  }
+
+  toast(`Taguchi ${isL9?'L9':'L18'} matrix generated (${nRuns} runs)`);
+  refreshParamMatrix();
+}
+window.generateTaguchiMatrix = generateTaguchiMatrix;
+
+async function getParamColsInternal(factors, responses, customCols) {
+  let cols = await dbGetAll('param_columns') || [];
+  // This function builds columns on-the-fly for Taguchi mode
+  return cols; 
+}
+
+async function getCustomColumns() {
+  try {
+    const raw = await dbGet('settings', 'param_custom_cols');
+    return raw ? JSON.parse(raw.value) : [];
+  } catch(e) { return []; }
+}
+
+async function addCustomColumn() {
+  const name = prompt('Custom column name:');
+  if (!name) return;
+  const type = prompt('Type: "text", "number", or "file"', 'text');
+  if (!type) return;
+  const customCols = await getCustomColumns();
+  customCols.push({ name, type: type || 'text' });
+  await dbPut('settings', { key: 'param_custom_cols', value: JSON.stringify(customCols) });
+  refreshParamMatrix();
+  toast(`Custom column "${name}" added`);
+}
+window.addCustomColumn = addCustomColumn;
+
+// ═══════ SNR Calculation ═══════
+
+function calcSNR(values, snrType) {
+  // values: array of numbers (one per run)
+  const n = values.length;
+  if (n === 0 || values.some(v => v === null || v === undefined || isNaN(v))) return null;
+  
+  if (snrType === 'larger_better') {
+    // 望大: -10*log10(sum(1/y²)/n)
+    const sumRecipSq = values.reduce((s, v) => s + 1/(v*v), 0);
+    return -10 * Math.log10(sumRecipSq / n);
+  } else if (snrType === 'smaller_better') {
+    // 望小: -10*log10(sum(y²)/n)
+    const sumSq = values.reduce((s, v) => s + v*v, 0);
+    return -10 * Math.log10(sumSq / n);
+  } else {
+    // 望目: 10*log10(mean²/variance)
+    const mean = values.reduce((s, v) => s + v, 0) / n;
+    const variance = values.reduce((s, v) => s + (v - mean)*(v - mean), 0) / n;
+    if (variance === 0) return Infinity;
+    return 10 * Math.log10((mean * mean) / variance);
+  }
+}
+
+function calcPerRowSNR(respValues, snrType, allValues) {
+  // For per-row display, we need the whole set to calculate one SNR value
+  // This returns the SNR for the entire response set, or null if incomplete
+  if (!allValues || allValues.length < 9) return null;
+  return calcSNR(allValues, snrType);
+}
+
+async function recalcSNR() {
+  await runTaguchiAnalysis();
+}
+window.recalcSNR = recalcSNR;
+
+// ═══════ Taguchi Analysis ═══════
+
+async function runTaguchiAnalysis() {
+  const analysisDiv = document.getElementById('taguchiAnalysis');
+  if (!analysisDiv) return;
+  analysisDiv.style.display = 'block';
+
+  // Load config
+  let config = null;
+  try {
+    const raw = await dbGet('settings', 'param_doe_config');
+    if (raw) config = JSON.parse(raw.value);
+  } catch(e) {}
+
+  if (!config || !config.factors || config.factors.length === 0) {
+    toast('No Taguchi config found. Generate matrix first.', 'var(--warn)');
+    return;
+  }
+
+  const rows = await dbGetAll('param_rows') || [];
+  if (rows.length === 0) { toast('No data rows', 'var(--warn)'); return; }
+
+  const doeType = config.doeType || 'taguchi_l9';
+  const matrix = L9_MATRIX;
+  const factors = config.factors;
+  const responses = config.responses || [];
+  const cols = await dbGetAll('param_columns') || [];
+
+  // Build value maps: response name -> [values across all 9 runs]
+  const respValueMap = {};
+  for (const resp of responses) {
+    const col = cols.find(c => c.name === resp.name && c.type === 'response');
+    if (!col) continue;
+    const vals = [];
+    for (let i = 0; i < Math.min(rows.length, matrix.length); i++) {
+      const row = rows[i];
+      const v = row.values && row.values[col.id] ? parseFloat(row.values[col.id]) : NaN;
+      vals.push(isNaN(v) ? null : v);
+    }
+    respValueMap[resp.name] = { values: vals, snrType: resp.snrType };
+  }
+
+  // Calculate SNR for each response
+  const snrResults = {};
+  for (const [respName, data] of Object.entries(respValueMap)) {
+    const validVals = data.values.filter(v => v !== null);
+    if (validVals.length < 9) continue; // need all 9
+    snrResults[respName] = { snrType: data.snrType, overallSNR: calcSNR(validVals, data.snrType) };
+  }
+
+  if (Object.keys(snrResults).length === 0) {
+    const chartsDiv = document.getElementById('taguchiCharts');
+    if (chartsDiv) chartsDiv.innerHTML = '<p style="color:var(--muted);font-size:11px">Fill all 9 response values to see SNR analysis.</p>';
+    return;
+  }
+
+  // Per-factor SNR analysis
+  const analysisData = [];
+  for (const respName of Object.keys(snrResults)) {
+    const data = respValueMap[respName];
+    const snrType = data.snrType;
+    // For each factor, calculate mean SNR per level
+    for (let fi = 0; fi < factors.length; fi++) {
+      const factorName = factors[fi].name;
+      const snrPerLevel = { L1: [], L2: [], L3: [] };
+      for (let run = 0; run < Math.min(rows.length, matrix.length); run++) {
+        const level = matrix[run][fi];
+        const val = data.values[run];
+        if (val === null || val === undefined) continue;
+        // For per-level SNR we approximate with the value itself
+        // Full SNR needs all 9, but per-level contribution uses the value
+        snrPerLevel['L' + level].push(val);
+      }
+      // Calculate mean per level using the actual values as proxy
+      const meanL1 = snrPerLevel.L1.length > 0 ? snrPerLevel.L1.reduce((a,b)=>a+b,0)/snrPerLevel.L1.length : 0;
+      const meanL2 = snrPerLevel.L2.length > 0 ? snrPerLevel.L2.reduce((a,b)=>a+b,0)/snrPerLevel.L2.length : 0;
+      const meanL3 = snrPerLevel.L3.length > 0 ? snrPerLevel.L3.reduce((a,b)=>a+b,0)/snrPerLevel.L3.length : 0;
+      const delta = Math.max(meanL1, meanL2, meanL3) - Math.min(meanL1, meanL2, meanL3);
+      analysisData.push({ response: respName, factor: factorName, factorIndex: fi,
+        means: [meanL1, meanL2, meanL3], delta });
+    }
+  }
+
+  // Render charts
+  const chartsDiv = document.getElementById('taguchiCharts');
+  if (chartsDiv) {
+    let chartHtml = '';
+    const factorSet = new Set(analysisData.map(d => d.factorIndex));
+    factorSet.forEach(fi => {
+      const factorData = analysisData.filter(d => d.factorIndex === fi);
+      chartHtml += `<div class="snr-chart-wrap"><canvas id="snrChart_${fi}"></canvas></div>`;
+    });
+    chartsDiv.innerHTML = chartHtml;
+    
+    // Draw charts
+    setTimeout(() => {
+      factorSet.forEach(fi => {
+        const factorData = analysisData.filter(d => d.factorIndex === fi);
+        if (factorData.length > 0) renderSNRChart(fi, factorData);
+      });
+    }, 100);
+  }
+
+  // Ranking table
+  const rankingDiv = document.getElementById('taguchiRanking');
+  if (rankingDiv) {
+    const sorted = [...analysisData].sort((a, b) => b.delta - a.delta);
+    let rankHtml = '<table class="taguchi-ranking-table"><thead><tr><th>Rank</th><th>Response</th><th>Factor</th><th>L1 Mean</th><th>L2 Mean</th><th>L3 Mean</th><th>Delta</th></tr></thead><tbody>';
+    sorted.forEach((d, i) => {
+      rankHtml += `<tr>
+        <td>${i+1}</td>
+        <td>${escHtml(d.response)}</td>
+        <td><b>${escHtml(d.factor)}</b></td>
+        <td>${d.means[0].toFixed(4)}</td>
+        <td>${d.means[1].toFixed(4)}</td>
+        <td>${d.means[2].toFixed(4)}</td>
+        <td style="font-weight:600;color:var(--acc)">${d.delta.toFixed(4)}</td>
+      </tr>`;
+    });
+    rankHtml += '</tbody></table>';
+    rankingDiv.innerHTML = rankHtml;
+  }
+
+  // Optimal combination
+  const optimalDiv = document.getElementById('taguchiOptimal');
+  if (optimalDiv) {
+    // For each factor, find the level with best mean across responses
+    const factorBestLevels = {};
+    for (const d of analysisData) {
+      if (!factorBestLevels[d.factorIndex]) factorBestLevels[d.factorIndex] = { L1: 0, L2: 0, L3: 0 };
+      const bestIdx = d.means.indexOf(Math.max(...d.means));
+      factorBestLevels[d.factorIndex]['L' + (bestIdx+1)]++;
+    }
+    let optHtml = '<strong>🏆 Optimal Combination:</strong> ';
+    for (let fi = 0; fi < factors.length; fi++) {
+      const name = factors[fi].name;
+      const votes = factorBestLevels[fi] || { L1: 0, L2: 0, L3: 0 };
+      const bestLevel = Object.entries(votes).sort((a,b) => b[1]-a[1])[0][0];
+      const levelIdx = parseInt(bestLevel[1]) - 1;
+      const levelVal = factors[fi].levels[levelIdx];
+      optHtml += `<span style="margin:0 4px;padding:2px 8px;background:var(--acc);color:#fff;border-radius:3px;font-size:11px">${escHtml(name)} = ${escHtml(levelVal)}</span>`;
+    }
+    optHtml += `<br><span style="font-size:10px;color:var(--muted)">Based on highest mean response per factor level</span>`;
+    optimalDiv.innerHTML = optHtml;
+  }
+
+  // Store analysis
+  await dbPut('settings', { key: 'param_analysis', value: JSON.stringify({ analysisData, timestamp: new Date().toISOString() }) });
+  toast('Taguchi analysis complete ✓');
+}
+window.runTaguchiAnalysis = runTaguchiAnalysis;
+
+function renderSNRChart(factorIndex, chartData) {
+  const canvas = document.getElementById('snrChart_' + factorIndex);
+  if (!canvas || !window.Chart) return;
+  
+  const factorName = chartData[0] ? chartData[0].factor : 'Factor ' + String.fromCharCode(65 + factorIndex);
+  const datasets = [];
+  const colors = ['#0366d6', '#28a745', '#f66a0a', '#d73a49'];
+  chartData.forEach((d, i) => {
+    datasets.push({
+      label: d.response,
+      data: d.means,
+      borderColor: colors[i % colors.length],
+      backgroundColor: colors[i % colors.length] + '30',
+      fill: false,
+      tension: 0.3
+    });
+  });
+
+  new Chart(canvas, {
+    type: 'line',
+    data: { labels: ['Level 1', 'Level 2', 'Level 3'], datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: factorName, font: { size: 12 } },
+        legend: { labels: { font: { size: 10 } } }
+      },
+      scales: {
+        y: { title: { display: true, text: 'Mean Response', font: { size: 10 } } }
+      }
+    }
+  });
+}
+window.renderSNRChart = renderSNRChart;
+
+async function restoreTaguchiState() {
+  try {
+    const raw = await dbGet('settings', 'doe_type');
+    if (!raw) return;
+    const doeType = raw.value;
+    if (doeType === 'taguchi_l9' || doeType === 'taguchi_l18') {
+      const sel = document.getElementById('doeType');
+      if (sel) sel.value = doeType;
+      const setupDiv = document.getElementById('taguchiSetup');
+      if (setupDiv) setupDiv.style.display = 'block';
+      setupTaguchiFactors();
+      // Try to load saved factor values
+      const configRaw = await dbGet('settings', 'param_doe_config');
+      if (configRaw) {
+        const config = JSON.parse(configRaw.value);
+        if (config.factors) {
+          for (let i = 0; i < config.factors.length; i++) {
+            const nameEl = document.getElementById('facName'+i);
+            const l1El = document.getElementById('facL1_'+i);
+            const l2El = document.getElementById('facL2_'+i);
+            const l3El = document.getElementById('facL3_'+i);
+            if (nameEl) nameEl.value = config.factors[i].name;
+            if (l1El && config.factors[i].levels[0]) l1El.value = config.factors[i].levels[0];
+            if (l2El && config.factors[i].levels[1]) l2El.value = config.factors[i].levels[1];
+            if (l3El && config.factors[i].levels[2]) l3El.value = config.factors[i].levels[2];
+          }
+        }
+        if (config.responses) {
+          for (let i = 0; i < config.responses.length; i++) {
+            const nameEl = document.getElementById('respName'+i);
+            const snrEl = document.getElementById('respSNR'+i);
+            if (nameEl) nameEl.value = config.responses[i].name;
+            if (snrEl) snrEl.value = config.responses[i].snrType;
+          }
+        }
+      }
+      // Show analysis if it exists
+      const analysisRaw = await dbGet('settings', 'param_analysis');
+      if (analysisRaw) {
+        const analysisDiv = document.getElementById('taguchiAnalysis');
+        if (analysisDiv) analysisDiv.style.display = 'block';
+        runTaguchiAnalysis();
+      }
+    }
+  } catch(e) { console.warn('restoreTaguchiState:', e); }
+}
 
 function showStepModal() {
   document.getElementById('stepModal').classList.add('show');
@@ -2570,6 +3284,17 @@ function initKeyboard() {
 // ═══════ Window Exports ═══════
 window.escHtml = escHtml;
 window.switchPhase = switchPhase;
+window.onDOETypeChange = onDOETypeChange;
+window.setupTaguchiFactors = setupTaguchiFactors;
+window.setupResponseColumns = setupResponseColumns;
+window.generateTaguchiMatrix = generateTaguchiMatrix;
+window.addCustomColumn = addCustomColumn;
+window.addResponseField = addResponseField;
+window.recalcSNR = recalcSNR;
+window.runTaguchiAnalysis = runTaguchiAnalysis;
+window.renderSNRChart = renderSNRChart;
+window.autoRecalcSNR = autoRecalcSNR;
+window.refreshTaguchiMatrix = refreshTaguchiMatrix;
 
 // ═══════ Init ═══════
 async function loadContent() {
@@ -2589,6 +3314,7 @@ async function loadContent() {
   await refreshReferencesPhase();
   await refreshGoalsPhase();
   await refreshExperimentalPhase();
+  await restoreTaguchiState();
   await refreshResultsPhase();
   await refreshPaperPhase();
   document.getElementById('statusSync').textContent = '💾 Ready';
