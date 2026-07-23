@@ -1779,28 +1779,83 @@ async function refreshParamMatrix() {
 async function refreshManualMatrix(container) {
   const cols = await getParamCols();
   const rows = await getParamRows();
-  let html = '<table><thead><tr><th>Sample Name</th>';
+  
+  // CSS for compact spreadsheet-like cells
+  const cellStyle = 'width:100px;font-size:11px;padding:3px 5px;border:1px solid var(--bdr);background:var(--card);color:var(--txt);border-radius:2px;font-family:var(--font-mono);box-sizing:border-box;';
+  const thStyle = 'font-size:10px;font-weight:600;padding:5px 6px;white-space:nowrap;position:sticky;top:0;background:var(--bg);z-index:1;';
+  
+  let html = '<table id="paramDataTable" style="border-collapse:collapse;width:auto;table-layout:auto"><thead><tr>';
+  html += `<th style="${thStyle}">#</th>`;
+  html += `<th style="${thStyle}">Sample</th>`;
   cols.forEach(c => {
     const icon = c.type === 'result' ? '📊' : c.type === 'fixed' ? '🔒' : '🔧';
-    html += `<th title="${c.type}">${icon} ${escHtml(c.name)}</th>`;
+    html += `<th style="${thStyle}" title="${c.type}">${icon} ${escHtml(c.name)}</th>`;
   });
   html += '</tr></thead><tbody>';
-  rows.forEach(r => {
+  
+  rows.forEach((r, ri) => {
     html += '<tr>';
-    html += `<td contenteditable="true" oninput="updateParamCell(${r.id},'sampleName',this.textContent)">${escHtml(r.sampleName||'')}</td>`;
+    html += `<td style="font-size:10px;color:var(--muted);text-align:center;padding:3px 5px">${ri+1}</td>`;
+    html += `<td><input class="cell-input" style="${cellStyle}" value="${escHtml(r.sampleName||'')}" data-row="${r.id}" data-field="sampleName" placeholder="Sample"></td>`;
     cols.forEach(c => {
       const val = (r.values && r.values[c.id]) ? escHtml(r.values[c.id]) : '';
       if (c.type === 'result') {
         const fname = (r.files && r.files[c.id]) ? r.files[c.id].name : '';
-        html += `<td style="min-width:120px">${fname ? `<span style="font-size:10px;color:var(--acc)">📎 ${escHtml(fname)}</span><br>` : ''}<input style="width:80px;font-size:11px" placeholder="benchmark" value="${val}" onchange="updateParamCell(${r.id},'val_${c.id}',this.value)"><button class="btn sm" style="font-size:9px;padding:2px 4px" onclick="uploadParamFile(${r.id},${c.id})">📂</button></td>`;
+        html += `<td style="white-space:nowrap;min-width:130px">`;
+        if (fname) html += `<span style="font-size:9px;color:var(--acc);display:block">📎 ${escHtml(fname)}</span>`;
+        html += `<input class="cell-input" style="${cellStyle}" value="${val}" data-row="${r.id}" data-field="val_${c.id}" placeholder="value"><button class="btn sm" style="font-size:9px;padding:1px 3px;margin-left:2px" data-row="${r.id}" data-col="${c.id}">📂</button></td>`;
       } else {
-        html += `<td contenteditable="true" oninput="updateParamCell(${r.id},'val_${c.id}',this.textContent)">${val}</td>`;
+        html += `<td><input class="cell-input" style="${cellStyle}" value="${val}" data-row="${r.id}" data-field="val_${c.id}" placeholder="${escHtml(c.name)}"></td>`;
       }
     });
     html += '</tr>';
   });
   html += '</tbody></table>';
   container.innerHTML = html;
+  
+  // Debounced save on input
+  container.querySelectorAll('.cell-input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const rowId = parseInt(inp.dataset.row);
+      const field = inp.dataset.field;
+      updateParamCell(rowId, field, inp.value);
+    });
+  });
+  
+  // Upload buttons
+  container.querySelectorAll('button.btn.sm[data-col]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      uploadParamFile(parseInt(btn.dataset.row), btn.dataset.col);
+    });
+  });
+  
+  // Paste handler: when user pastes tab/newline data, fill across cells
+  container.querySelector('#paramDataTable')?.addEventListener('paste', (e) => {
+    const activeEl = document.activeElement;
+    if (!activeEl || !activeEl.classList.contains('cell-input')) return;
+    e.preventDefault();
+    const pasteData = (e.clipboardData || window.clipboardData).getData('text');
+    const rows_data = pasteData.split(/
+?\n/).filter(r => r.trim());
+    if (rows_data.length === 0) return;
+    
+    const tr = activeEl.closest('tr');
+    const td = activeEl.closest('td');
+    const inputs = Array.from(tr.querySelectorAll('input.cell-input'));
+    const rows_all = Array.from(tr.parentElement.querySelectorAll('tr'));
+    const startCol = inputs.indexOf(activeEl);
+    const startRow = rows_all.indexOf(tr);
+    
+    for (let ri = 0; ri < rows_data.length && startRow + ri < rows_all.length; ri++) {
+      const cols_paste = rows_data[ri].split('\t');
+      const rowInputs = Array.from(rows_all[startRow + ri].querySelectorAll('input.cell-input'));
+      for (let ci = 0; ci < cols_paste.length && startCol + ci < rowInputs.length; ci++) {
+        const target = rowInputs[startCol + ci];
+        target.value = cols_paste[ci].trim();
+        target.dispatchEvent(new Event('change'));
+      }
+    }
+  });
 }
 
 async function refreshTaguchiMatrix(container, doeType) {
