@@ -905,7 +905,51 @@ body.presenting .present-hint { display: block; }
   </div>
 </div>
 
-<!-- ═══════ Literature Editor Modal ═══════ -->
+<!-- ═══════ Parameter Column Modal ═══════ -->
+<div class="modal-overlay" id="paramColModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3 id="paramColModalTitle">➕ Add Column</h3>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted);margin-bottom:4px;display:block">Column Name</label>
+      <input type="text" id="paramColName" placeholder="e.g. Temperature / °C" autofocus style="width:100%;box-sizing:border-box">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:11px;color:var(--muted);margin-bottom:4px;display:block">Column Type</label>
+      <select id="paramColType" style="width:100%;padding:8px;background:var(--bg);color:var(--txt);border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+        <option value="variable">🔧 Variable</option>
+        <option value="fixed">🔒 Fixed</option>
+        <option value="result">📊 Result (with benchmark)</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn prim" onclick="confirmParamCol()">Add Column</button>
+      <button class="btn" onclick="closeParamColModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ Custom Column Modal ═══════ -->
+<div class="modal-overlay" id="customColModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>➕ Add Custom Column</h3>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted);margin-bottom:4px;display:block">Column Name</label>
+      <input type="text" id="customColName" placeholder="e.g. SEM Image, EIS Data" autofocus style="width:100%;box-sizing:border-box">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:11px;color:var(--muted);margin-bottom:4px;display:block">Data Type</label>
+      <select id="customColDataType" style="width:100%;padding:8px;background:var(--bg);color:var(--txt);border:1px solid var(--bdr);border-radius:4px;font-size:13px">
+        <option value="text">📝 Text</option>
+        <option value="number">🔢 Number</option>
+        <option value="file">📂 File Upload</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn prim" onclick="confirmCustomCol()">Add Column</button>
+      <button class="btn" onclick="closeCustomColModal()">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="litModal">
   <div class="modal-box">
     <h3 id="litModalTitle">📚 Add Reference</h3>
@@ -1977,13 +2021,28 @@ async function uploadParamFile(rowId, colId) {
 window.uploadParamFile = uploadParamFile;
 
 async function addParamColumn() {
-  const name = prompt('Column name:');
-  if (!name) return;
-  const type = prompt('Type: "fixed", "variable", or "result"', 'variable');
-  await dbPut('param_columns', { name, type: type || 'variable' });
-  refreshParamMatrix();
+  document.getElementById('paramColModal').classList.add('show');
+  document.getElementById('paramColName').value = '';
+  document.getElementById('paramColType').value = 'variable';
+  document.getElementById('paramColName').focus();
 }
 window.addParamColumn = addParamColumn;
+
+async function confirmParamCol() {
+  const name = document.getElementById('paramColName').value.trim();
+  if (!name) return;
+  const type = document.getElementById('paramColType').value;
+  await dbPut('param_columns', { name, type });
+  closeParamColModal();
+  refreshParamMatrix();
+  toast(`Column "${name}" added`);
+}
+window.confirmParamCol = confirmParamCol;
+
+function closeParamColModal() {
+  document.getElementById('paramColModal').classList.remove('show');
+}
+window.closeParamColModal = closeParamColModal;
 
 async function addParamRow() {
   await dbPut('param_rows', { sampleName: `Sample ${Date.now()%10000}`, values: {}, files: {} });
@@ -2169,9 +2228,22 @@ async function generateTaguchiMatrix() {
 window.generateTaguchiMatrix = generateTaguchiMatrix;
 
 async function getParamColsInternal(factors, responses, customCols) {
-  let cols = await dbGetAll('param_columns') || [];
-  // This function builds columns on-the-fly for Taguchi mode
-  return cols; 
+  // Dynamically build column list for Taguchi mode
+  let cols = [];
+  let nextId = 1;
+  // Factor columns
+  for (const f of factors) {
+    cols.push({ id: `fac_${nextId++}`, name: f.name, type: 'factor' });
+  }
+  // Response columns  
+  for (const r of responses) {
+    cols.push({ id: `resp_${nextId++}`, name: r.name, type: 'response', snrType: r.snrType });
+  }
+  // Custom columns
+  for (const cc of customCols) {
+    cols.push({ id: `cust_${nextId++}`, name: cc.name, type: 'custom', dataType: cc.type });
+  }
+  return cols;
 }
 
 async function getCustomColumns() {
@@ -2182,17 +2254,30 @@ async function getCustomColumns() {
 }
 
 async function addCustomColumn() {
-  const name = prompt('Custom column name:');
+  document.getElementById('customColModal').classList.add('show');
+  document.getElementById('customColName').value = '';
+  document.getElementById('customColDataType').value = 'text';
+  document.getElementById('customColName').focus();
+}
+window.addCustomColumn = addCustomColumn;
+
+async function confirmCustomCol() {
+  const name = document.getElementById('customColName').value.trim();
   if (!name) return;
-  const type = prompt('Type: "text", "number", or "file"', 'text');
-  if (!type) return;
+  const type = document.getElementById('customColDataType').value;
   const customCols = await getCustomColumns();
-  customCols.push({ name, type: type || 'text' });
+  customCols.push({ name, type });
   await dbPut('settings', { key: 'param_custom_cols', value: JSON.stringify(customCols) });
+  closeCustomColModal();
   refreshParamMatrix();
   toast(`Custom column "${name}" added`);
 }
-window.addCustomColumn = addCustomColumn;
+window.confirmCustomCol = confirmCustomCol;
+
+function closeCustomColModal() {
+  document.getElementById('customColModal').classList.remove('show');
+}
+window.closeCustomColModal = closeCustomColModal;
 
 // ═══════ SNR Calculation ═══════
 
@@ -3269,15 +3354,34 @@ function escHtml(s) {
 // ═══════ Keyboard ═══════
 function initKeyboard() {
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.body.classList.contains('presenting')) {
-      togglePresent();
-      return;
+    if (e.key === 'Escape') {
+      // Close any open modal
+      if (document.getElementById('paramColModal').classList.contains('show')) {
+        closeParamColModal();
+        return;
+      }
+      if (document.getElementById('customColModal').classList.contains('show')) {
+        closeCustomColModal();
+        return;
+      }
+      if (document.body.classList.contains('presenting')) {
+        togglePresent();
+        return;
+      }
     }
     if (document.body.classList.contains('presenting')) {
       if (e.key === 'ArrowRight') { /* next */ e.preventDefault(); }
       if (e.key === 'ArrowLeft') { /* prev */ e.preventDefault(); }
       return;
     }
+  });
+
+  // Click outside modal to close
+  document.getElementById('paramColModal').addEventListener('click', (e) => {
+    if (e.target.id === 'paramColModal') closeParamColModal();
+  });
+  document.getElementById('customColModal').addEventListener('click', (e) => {
+    if (e.target.id === 'customColModal') closeCustomColModal();
   });
 }
 
@@ -3288,7 +3392,6 @@ window.onDOETypeChange = onDOETypeChange;
 window.setupTaguchiFactors = setupTaguchiFactors;
 window.setupResponseColumns = setupResponseColumns;
 window.generateTaguchiMatrix = generateTaguchiMatrix;
-window.addCustomColumn = addCustomColumn;
 window.addResponseField = addResponseField;
 window.recalcSNR = recalcSNR;
 window.runTaguchiAnalysis = runTaguchiAnalysis;
