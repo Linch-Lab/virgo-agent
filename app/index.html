@@ -1045,8 +1045,12 @@ function _dbGet(s, k) { return new Promise((r, j) => { const t = db.transaction(
 function _dbDelete(s, k) { return new Promise((r, j) => { const t = db.transaction(s, 'readwrite'); t.objectStore(s).delete(k); t.oncomplete = () => { r(); scheduleMirror(); }; t.onerror = (e) => j(e.target.error); }); }
 
 function _useSupabase() { return supabaseReady && supabase && authUser; }
+// Only these stores exist as Supabase tables — others are local-only
+const SUPABASE_STORES = new Set(['pages','settings','literature','references','chat_history']);
+function _shouldSyncToSupabase(store) { return SUPABASE_STORES.has(store); }
+
 async function dbPut(store, data) {
-  if (_useSupabase() && !['param_rows','param_columns'].includes(store)) {
+  if (_useSupabase() && _shouldSyncToSupabase(store)) {
     try {
       const clean = {}; for (const k in data) { if (data[k] !== undefined) clean[k] = data[k]; }
       const result = await supabase.from(store).upsert(clean).select();
@@ -1062,7 +1066,7 @@ async function dbPut(store, data) {
   return _dbPut(store, data);
 }
 async function dbGetAll(store) {
-  if (_useSupabase() && !['param_rows','param_columns'].includes(store)) {
+  if (_useSupabase() && _shouldSyncToSupabase(store)) {
     try {
       const result = await supabase.from(store).select('*').order('id', { ascending: false });
       if (result.error) throw result.error;
@@ -1072,7 +1076,7 @@ async function dbGetAll(store) {
   return _dbGetAll(store);
 }
 async function dbGet(store, key) {
-  if (_useSupabase() && !['param_rows','param_columns'].includes(store)) {
+  if (_useSupabase() && _shouldSyncToSupabase(store)) {
     try {
       const result = await supabase.from(store).select('*').eq('id', key).single();
       if (result.error) { if (result.error.code === 'PGRST116') return null; throw result.error; }
@@ -1082,7 +1086,7 @@ async function dbGet(store, key) {
   return _dbGet(store, key);
 }
 async function dbDelete(store, key) {
-  if (_useSupabase()) {
+  if (_useSupabase() && _shouldSyncToSupabase(store)) {
     try { await supabase.from(store).delete().eq('id', key); try { await _dbDelete(store, key); } catch(e) {} scheduleMirror(); } catch(e) { return _dbDelete(store, key); }
   }
   return _dbDelete(store, key);
