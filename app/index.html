@@ -1020,7 +1020,7 @@ const SUPABASE_URL = 'https://mtshudmynuedafqixbvj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_97FLsYeAC_P5WWWeSkfvgQ_H99sN3VU';
 const API_BASE = 'https://virgo-agent-api.onrender.com';
 const DB_NAME = 'virgo_v3';
-const DB_VER = 2;
+const DB_VER = 3;
 
 // ═══════ Supabase ═══════
 let supabase = null;
@@ -1051,6 +1051,8 @@ function openDB() {
       if (!d.objectStoreNames.contains('steps')) d.createObjectStore('steps', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('goals')) d.createObjectStore('goals', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('param_matrix')) d.createObjectStore('param_matrix', { keyPath: 'id', autoIncrement: true });
+      if (!d.objectStoreNames.contains('param_columns')) d.createObjectStore('param_columns', { keyPath: 'name' });
+      if (!d.objectStoreNames.contains('param_rows')) d.createObjectStore('param_rows', { keyPath: 'id', autoIncrement: true });
       if (!d.objectStoreNames.contains('references')) d.createObjectStore('references', { keyPath: 'id', autoIncrement: true });
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
