@@ -1835,8 +1835,7 @@ async function refreshManualMatrix(container) {
     if (!activeEl || !activeEl.classList.contains('cell-input')) return;
     e.preventDefault();
     const pasteData = (e.clipboardData || window.clipboardData).getData('text');
-    const rows_data = pasteData.split(/
-?\n/).filter(r => r.trim());
+    const rows_data = pasteData.trim().split('\n').map(r => r.trim()).filter(r => r);
     if (rows_data.length === 0) return;
     
     const tr = activeEl.closest('tr');
