@@ -779,6 +779,7 @@ body.presenting .present-hint { display: block; }
             <div style="display:flex;gap:4px;align-items:center">
               <button class="btn sm" onclick="addParamColumn()">+ Column</button>
               <button class="btn sm" onclick="addParamRow()">+ Row</button>
+              <button class="btn prim sm" onclick="generateL9Matrix()" id="btnGenerateL9" style="display:none">🔧 Generate L9</button>
             </div>
           </div>
           <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
@@ -1967,56 +1968,62 @@ async function runTaguchiAnalysis() {
 }
 window.runTaguchiAnalysis = runTaguchiAnalysis;
 
-function calcSNRPerRow(row, respName, snrType) {
-  const v = (row.values || {})[respName];
-  if (!v) return null;
-  const num = parseFloat(v);
-  if (isNaN(num)) return null;
-  // Per-row SNR for a single value
-  if (snrType === 'smaller_better') return -10 * Math.log10(num * num);
-  if (snrType === 'nominal_best') return 10 * Math.log10(num * num);
-  return -10 * Math.log10(1 / (num * num)); // larger_better
-}
+// ═══════ L9 Matrix Generator ═══════
 
-function renderTaguchiAnalysis(analysis, factorCols, responseCols, factorLevels) {
-  // Charts container
-  const chartsDiv = document.getElementById('taguchiCharts');
-  const rankingDiv = document.getElementById('taguchiRanking');
-  const optimalDiv = document.getElementById('taguchiOptimal');
+// L9 orthogonal array (up to 4 factors, 3 levels each)
+const L9 = [
+  [0,0,0,0], [0,1,1,1], [0,2,2,2],
+  [1,0,1,2], [1,1,2,0], [1,2,0,1],
+  [2,0,2,1], [2,1,0,2], [2,2,1,0]
+];
+
+async function generateL9Matrix() {
+  const cols = await getParamCols();
+  const factorCols = cols.filter(c => c.role === 'factor');
+  const responseCols = cols.filter(c => c.role === 'response');
   
-  let chartsHtml = '';
-  let rankingHtml = '<div style="overflow-x:auto"><table style="font-size:11px;border-collapse:collapse"><thead><tr><th style="padding:4px 8px;text-align:left">Factor</th><th style="padding:4px 8px">Max SNR</th><th style="padding:4px 8px">Min SNR</th><th style="padding:4px 8px">Δ (Delta)</th><th style="padding:4px 8px">Rank</th></tr></thead><tbody>';
+  if (factorCols.length < 2) { toast('Need at least 2 factor columns', 'var(--warn)'); return; }
+  if (factorCols.length > 4) { toast('L9 supports max 4 factors', 'var(--warn)'); return; }
   
-  // For each response, generate charts
-  for (const rc of responseCols) {
-    const allDeltas = [];
-    for (const fc of factorCols) {
-      const means = analysis[rc.name][fc.name];
-      const vals = Object.values(means).filter(v => !isNaN(v));
-      if (vals.length > 1) allDeltas.push({ factor: fc.name, delta: Math.max(...vals) - Math.min(...vals), values: vals, levels: Object.keys(means) });
-    }
-    allDeltas.sort((a,b) => b.delta - a.delta);
-    
-    // Chart placeholder (real Chart.js would go here)
-    chartsHtml += `<div style="margin-bottom:12px"><strong style="font-size:11px">📊 ${rc.name} (${rc.snrType||'望大'})</strong><div style="height:180px;background:var(--bg);border-radius:4px;margin-top:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)">SNR Effect Charts — Chart.js render here</div></div>`;
-    
-    // Ranking table
-    allDeltas.forEach((d, i) => {
-      rankingHtml += `<tr><td style="padding:4px 8px">${escHtml(d.factor)}</td><td style="padding:4px 8px;text-align:center">${Math.max(...d.values).toFixed(2)}</td><td style="padding:4px 8px;text-align:center">${Math.min(...d.values).toFixed(2)}</td><td style="padding:4px 8px;text-align:center;font-weight:600">${d.delta.toFixed(2)}</td><td style="padding:4px 8px;text-align:center">${i+1}</td></tr>`;
-    });
+  for (const fc of factorCols) {
+    const lvls = (fc.levels || '').split(',').map(s => s.trim()).filter(s => s);
+    if (lvls.length < 3) { toast(`"${fc.name}" needs 3 levels`, 'var(--warn)'); return; }
   }
-  rankingHtml += '</tbody></table></div>';
   
-  chartsDiv.innerHTML = chartsHtml;
-  rankingDiv.innerHTML = rankingHtml;
-  optimalDiv.innerHTML = '<span style="font-size:11px">🏆 Optimal combination: select highest SNR level per factor (see Δ ranking above)</span>';
+  const oldRows = await dbGetAll('param_rows') || [];
+  for (const r of oldRows) { await dbDelete('param_rows', r.id); }
+  
+  for (let run = 0; run < 9; run++) {
+    const values = {};
+    for (let f = 0; f < factorCols.length; f++) {
+      const lvls = (factorCols[f].levels || '').split(',').map(s => s.trim()).filter(s => s);
+      values[factorCols[f].name] = lvls[L9[run][f]] || '';
+    }
+    for (const rc of responseCols) {
+      values[rc.name] = '';
+    }
+    await dbPut('param_rows', { sampleName: `Run ${run+1}`, values, files: {} });
+  }
+  
+  toast(`L9 matrix generated — 9 runs × ${factorCols.length} factors`);
+  refreshParamMatrix();
+}
+window.generateL9Matrix = generateL9Matrix;
+
+function updateGenerateButton() {
+  const btn = document.getElementById('btnGenerateL9');
+  if (!btn) return;
+  getParamCols().then(cols => {
+    const nFactors = cols.filter(c => c.role === 'factor').length;
+    btn.style.display = nFactors >= 2 ? 'inline-block' : 'none';
+  });
 }
 
-// Remove old DOE functions — no longer needed
 async function refreshParamMatrix() {
   const container = document.getElementById('paramMatrix');
   if (!container) return;
   await refreshManualMatrix(container);
+  updateGenerateButton();
 }
 
 // ═══════ SNR Calculation ═══════
